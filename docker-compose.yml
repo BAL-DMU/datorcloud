@@ -1,5 +1,7 @@
 version: "3.8"
+
 services:
+  # DuckDB Service
   duckdb:
     build:
       context: .
@@ -8,6 +10,23 @@ services:
       - .:/orx-surghub
     ports:
       - "8001:8001"
-    stdin_open: true     # Keep stdin open for interaction
-    tty: true            # Allocate a pseudo-TTY
+    stdin_open: true       # Keep stdin open for interaction
+    tty: true              # Allocate a pseudo-TTY
     command: tail -f /dev/null  # Keep the container alive
+
+  # MinIO Service
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    environment:
+      - MINIO_ROOT_USER=minioadmin       # Default username, change for production
+      - MINIO_ROOT_PASSWORD=minioadmin   # Default password, change for production
+    volumes:
+      - minio_data:/data                 # Persistent data volume
+    ports:
+      - "9000:9000"                      # MinIO console/API port
+      - "9001:9001"                      # MinIO web console port
+    command: server /data --console-address ":9001"
+
+volumes:
+  minio_data:                             # Named volume for MinIO persistence
