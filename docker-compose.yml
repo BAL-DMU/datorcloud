@@ -1,0 +1,13 @@
+version: "3.8"
+services:
+  duckdb:
+    build:
+      context: .
+      dockerfile: docker/duckdb/Dockerfile
+    volumes:
+      - .:/orx-surghub
+    ports:
+      - "8001:8001"
+    stdin_open: true     # Keep stdin open for interaction
+    tty: true            # Allocate a pseudo-TTY
+    command: tail -f /dev/null  # Keep the container alive
