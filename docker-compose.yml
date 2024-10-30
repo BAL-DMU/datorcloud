@@ -1,5 +1,4 @@
 version: "3.8"
-
 services:
   # DuckDB Service
   duckdb:
@@ -10,23 +9,38 @@ services:
       - .:/orx-surghub
     ports:
       - "8001:8001"
-    stdin_open: true       # Keep stdin open for interaction
-    tty: true              # Allocate a pseudo-TTY
-    command: tail -f /dev/null  # Keep the container alive
+    stdin_open: true
+    tty: true
+    command: tail -f /dev/null
+    environment:
+      - S3_ENDPOINT=minio:9000  # Configure the endpoint for MinIO service
+      - S3_USE_SSL=false
+      - S3_REGION=us-east-1
+      - S3_ACCESS_KEY=minioadmin
+      - S3_SECRET_KEY=minioadmin
+    depends_on:
+      - minio
+    networks:
+      - minio_network
 
   # MinIO Service
   minio:
     image: minio/minio:latest
     container_name: minio
     environment:
-      - MINIO_ROOT_USER=minioadmin       # Default username, change for production
-      - MINIO_ROOT_PASSWORD=minioadmin   # Default password, change for production
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
     volumes:
-      - minio_data:/data                 # Persistent data volume
+      - minio_data:/data
     ports:
-      - "9000:9000"                      # MinIO console/API port
-      - "9001:9001"                      # MinIO web console port
+      - "9000:9000"
+      - "9001:9001"
     command: server /data --console-address ":9001"
+    networks:
+      - minio_network
 
 volumes:
-  minio_data:                             # Named volume for MinIO persistence
+  minio_data:
+
+networks:
+  minio_network:

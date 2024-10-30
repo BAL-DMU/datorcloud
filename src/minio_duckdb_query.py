@@ -8,7 +8,8 @@ duckdb.sql("LOAD httpfs")
 duckdb.sql("SET s3_region='us-east-1'")
 duckdb.sql("SET s3_access_key_id='minioadmin'")
 duckdb.sql("SET s3_secret_access_key='minioadmin'")
-duckdb.sql("SET s3_endpoint='localhost:9000'")  # Remove "http://"
+# duckdb.sql("SET s3_endpoint='localhost:9000'")  # Remove "http://"
+duckdb.sql("SET s3_endpoint='minio:9000'")  # Use service name as hostname
 duckdb.sql("SET s3_url_style='path'")
 duckdb.sql("SET s3_use_ssl=false")  # Disable SSL if using HTTP
 
