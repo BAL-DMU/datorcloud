@@ -114,4 +114,4 @@ DuckDB can connect to MinIO to query data using the httpfs extension, which enab
 
 Notes:
 + For local setup, use localhost:9000 as the MinIO endpoint.
-+ For inter-container communication in Docker Compose, use minio:9000 (the service name).
++ For inter-container communication in Docker Compose, use minio:9000 (the service name).mkdir 
