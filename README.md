@@ -1,5 +1,5 @@
-# orx-surghub
-Surgical data platform to manage and release multimodal datasets for the ORD project (DuckDB)
+# CoreDataHub
+Core data stack to store objects and query the data warehouse with MinIO and DuckDB.
 
 
 ## Installation
@@ -113,5 +113,5 @@ DuckDB can connect to MinIO to query data using the httpfs extension, which enab
 
 
 Notes:
-    + For local setup, use localhost:9000 as the MinIO endpoint.
-    + For inter-container communication in Docker Compose, use minio:9000 (the service name).
++ For local setup, use localhost:9000 as the MinIO endpoint.
++ For inter-container communication in Docker Compose, use minio:9000 (the service name).
