@@ -1,2 +1,4 @@
 ## Big datasets that can be regenerated
 data/archive.zip
+data/metadata_orx-datahub.csv
+retrieved_data/
