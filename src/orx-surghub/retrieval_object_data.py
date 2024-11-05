@@ -37,7 +37,7 @@ try:
         FROM read_csv_auto('{metadata_file}')
         WHERE dataset = '{dataset_name}' 
           AND file_path LIKE '%{camera_name}_%' 
-          AND (subfolder = 'colorimage')
+          AND (subfolder LIKE 'colorimage/%' OR subfolder LIKE 'depthimage/%')
         ORDER BY experiment, subfolder
     """
     
@@ -59,7 +59,7 @@ try:
         filename = os.path.basename(file_path)
         local_file_path = os.path.join(local_experiment_dir, filename)
         
-        # Construct object_name including dataset, experiment, and subfolder
+        # Construct object_name including dataset, experiment, and full subfolder path
         object_name = f"{dataset_name}/{experiment}/{subfolder}/{filename}"
         
         # Additional logging to verify paths
@@ -68,7 +68,7 @@ try:
         # Download the file from MinIO to the local directory
         try:
             minio_client.fget_object(
-                bucket_name="orx-data-lake",
+                bucket_name="orx-datalake",
                 object_name=object_name,
                 file_path=local_file_path
             )
