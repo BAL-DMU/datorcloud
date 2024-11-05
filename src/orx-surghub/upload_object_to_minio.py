@@ -11,7 +11,7 @@ minio_client = Minio(
 )
 
 # Define the MinIO bucket name
-bucket_name = "orx-data-lake"
+bucket_name = "orx-datalake"
 
 # Create bucket if it does not exist
 try:
