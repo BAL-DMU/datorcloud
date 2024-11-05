@@ -16,7 +16,7 @@ metadata = []
 def collect_metadata(dataset_name, base_dir):
     """
     Collect metadata for each experiment in a dataset.
-    
+
     Parameters:
     - dataset_name: The name of the dataset (e.g., '4dor-dataset').
     - base_dir: The base directory of the dataset.
@@ -26,22 +26,21 @@ def collect_metadata(dataset_name, base_dir):
         
         # Only process directories
         if os.path.isdir(experiment_path):
-            for subfolder in os.listdir(experiment_path):
-                subfolder_path = os.path.join(experiment_path, subfolder)
+            for root, dirs, files in os.walk(experiment_path):
+                # Generate relative subfolder path from the experiment folder
+                subfolder = os.path.relpath(root, experiment_path)
                 
-                # Process each file in the subfolder
-                if os.path.isdir(subfolder_path):
-                    for file_name in os.listdir(subfolder_path):
-                        file_path = os.path.join(subfolder, file_name)  # Relative path from experiment root
-                        
-                        # Collect metadata for each file
-                        metadata.append({
-                            "dataset": dataset_name,
-                            "experiment": experiment,
-                            "subfolder": subfolder,
-                            "file_name": file_name,
-                            "file_path": file_path
-                        })
+                for file_name in files:
+                    file_path = os.path.join(subfolder, file_name)  # Relative path from experiment root
+                    
+                    # Collect metadata for each file
+                    metadata.append({
+                        "dataset": dataset_name,
+                        "experiment": experiment,
+                        "subfolder": subfolder,
+                        "file_name": file_name,
+                        "file_path": file_path
+                    })
 
 # Collect metadata from all datasets
 for dataset_name, base_dir in base_dirs.items():
