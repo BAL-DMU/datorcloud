@@ -32,6 +32,7 @@ def collect_metadata(dataset_name, base_dir):
                 
                 for file_name in files:
                     file_path = os.path.join(subfolder, file_name)  # Relative path from experiment root
+                    file_format = os.path.splitext(file_name)[1].lstrip('.').lower()  # Extract file extension
                     
                     # Collect metadata for each file
                     metadata.append({
@@ -39,7 +40,8 @@ def collect_metadata(dataset_name, base_dir):
                         "experiment": experiment,
                         "subfolder": subfolder,
                         "file_name": file_name,
-                        "file_path": file_path
+                        "file_path": file_path,
+                        "file_format": file_format
                     })
 
 # Collect metadata from all datasets
@@ -51,7 +53,7 @@ for dataset_name, base_dir in base_dirs.items():
 
 # Write metadata to a CSV file
 with open(output_file, mode="w", newline="") as csvfile:
-    fieldnames = ["dataset", "experiment", "subfolder", "file_name", "file_path"]
+    fieldnames = ["dataset", "experiment", "subfolder", "file_name", "file_path", "file_format"]
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     writer.writeheader()
     writer.writerows(metadata)
