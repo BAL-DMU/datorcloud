@@ -25,4 +25,4 @@ COPY src/ ./src
 CMD ["duckdb"]
 
 # Set the working directory
-WORKDIR /orx-surghub
+WORKDIR /orx-surgdatahub
