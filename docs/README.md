@@ -33,15 +33,8 @@ site_description: Documentation for the ORX-SurgHub platform
 site_author: Digital Medicine Unit/OR-X Translational Center for Surgery/Balgrist University Hospital
 
 nav:
-  - Overview: 01_overview/orx-surghub_architecture_and_development_plan.md
-  - Specifications: 02_specifications/spec_01.md
-  - Methods:
-    - Technical Design: 03_methods/method1_4_spec1.md
-  - Implementations:
-    - Prerequisites: 04_implementations/spec1-01_prerequisites.md
-    - Data Ingestion: 04_implementations/spec1-02_airflow_dag_4_data_ingestion.md
-    - Directory Structure: 04_implementations/spec1-03_establish_directory_structure_in_minio.md
-    - Database Schema: 04_implementations/spec1-04_define_the_database_schema_in_postgresql.md
+  - Overview: 01_overview/overview.md
+  - Installation: 02_installation/CoreDataPlatform.md
 
 theme:
   name: readthedocs
