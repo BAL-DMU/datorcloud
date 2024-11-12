@@ -1,0 +1,9 @@
+# Core dependencies for the collector and data ingestion client service
+duckdb==0.8.1
+minio==7.1.15
+
+# Documentation dependencies
+mkdocs==1.5.2
+mkdocs-material==9.1.1
+plantuml-markdown==3.7.0
+pymdown-extensions==10.0
