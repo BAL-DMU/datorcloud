@@ -21,15 +21,15 @@ cd my-project`
 
 Available themes:
 
-- `material` (recommended)
-- `readthedocs`
+- `material` 
+- `readthedocs` (used)
 - `mkdocs`
 
 ### 3. Example `mkdocs.yml`
 
 ```yaml
-site_name: ORX-SurgHub Docs
-site_description: Documentation for the ORX-SurgHub platform
+site_name: ORX-SurgDataHub Docs
+site_description: Documentation for the ORX-SurgDataHub platform
 site_author: Digital Medicine Unit/OR-X Translational Center for Surgery/Balgrist University Hospital
 
 nav:

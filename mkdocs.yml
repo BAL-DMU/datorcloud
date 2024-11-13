@@ -1,0 +1,34 @@
+site_name: ORX-SurgDataHub Docs
+site_description: Documentation for the ORX-SurgDataHub platform
+site_author: Digital Medicine Unit/OR-X Translational Center for Surgery/Balgrist University Hospital
+
+# Make Overview the home page
+nav:
+  - Home: 01_overview/overview.md     # 'Home' will display Overview content
+  - Overview: 01_overview/overview.md
+  - Installation: 02_installation/installing_core_data_platform.md
+
+theme:
+  name: readthedocs
+  navigation_depth: 1
+  collapse_navigation: false
+  titles_only: false
+
+markdown_extensions:
+  - plantuml_markdown:
+      server: http://www.plantuml.com/plantuml
+  - toc:
+      permalink: true
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+
+plugins:
+  - search
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/BAL-DMU/orx-surghub
+
+copyright: '&copy; 2024 Balgrist University Hospital'
