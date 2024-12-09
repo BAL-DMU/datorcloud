@@ -1,21 +1,13 @@
 import duckdb
+import os
 
 def create_database():
-    """
-    Creates a new database called ORXExperiments if it doesn't exist.
-    Returns a connection to the database.
-    """
-    # Connect to or create the database
-    conn = duckdb.connect('ORXExperiments.ddb')
-    return conn
+    """Creates ORXExperiments database in Docker volume"""
+    db_path = '/orx-surgdatahub/data/ORXExperiments.ddb'
+    os.makedirs(os.path.dirname(db_path), exist_ok=True)
+    return duckdb.connect(db_path)
 
 def create_experiment_card_table(conn):
-    """
-    Creates the ExperimentCard table if it doesn't exist.
-    
-    Parameters:
-    conn: duckdb.DuckDBPyConnection - Connection to the database
-    """
     conn.execute("""
     CREATE TABLE IF NOT EXISTS ExperimentCard (
         experiment_id INTEGER PRIMARY KEY,
@@ -30,12 +22,6 @@ def create_experiment_card_table(conn):
     """)
 
 def create_file_object_metadata_table(conn):
-    """
-    Creates the FileObjectMetadata table if it doesn't exist.
-    
-    Parameters:
-    conn: duckdb.DuckDBPyConnection - Connection to the database
-    """
     conn.execute("""
     CREATE TABLE IF NOT EXISTS FileObjectMetadata (
         file_id INTEGER PRIMARY KEY,
@@ -50,21 +36,43 @@ def create_file_object_metadata_table(conn):
     """)
 
 def main():
-    # Create database and get connection
     conn = create_database()
-    
     try:
-        # Create tables
         create_experiment_card_table(conn)
         create_file_object_metadata_table(conn)
         print("Database and tables created successfully!")
-        
     except Exception as e:
         print(f"An error occurred: {e}")
-        
     finally:
-        # Close the connection
         conn.close()
 
 if __name__ == "__main__":
     main()
+
+
+
+# ########################################
+# ## Command line to check the database
+# ########################################
+#
+# # 1. Connect to container
+# sudo docker exec -it orx-surgdatahub-duckdb-1 bash
+#
+# # 2. Start Python shell
+# python
+#
+# # 3. Check database in Python shell
+# import duckdb
+# conn = duckdb.connect('surgdata.db')
+#
+# # 4. Show all tables
+# conn.execute("SHOW TABLES").fetchall()
+#
+# # 5. View table contents (replace table_name)
+# conn.execute("SELECT * FROM table_name LIMIT 5").fetchall()
+#
+# # 6. Exit Python shell
+# exit()
+#
+# # 7. Exit container
+# exit
