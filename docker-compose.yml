@@ -14,6 +14,12 @@
 ## If you do want to connect to DuckDB later, you can do:
 ## docker exec -it duckdb bash or docker exec -it duckdb duckdb
 
+## If you do want to connect to MinIO later, you can do:
+## docker exec -it minio bash or docker exec -it minio mc
+
+## If you do want to connect to Python Runner later, you can do:
+## docker exec -it python-runner bash
+
 ## To stop the services, use the following command:
 ## docker-compose down
 ##############################################################
@@ -67,27 +73,28 @@ services:
   # Python Runner Service (Ubuntu 22.04 + Python 3.10)
   # -----------------------------------------------------
   python-runner:
-    image: my-python-service:latest       # <-- Use the same name/tag built & saved by the script
+    image: dms-python-service:latest  # Same name/tag built & saved by your script
     container_name: python-runner
     depends_on:
       - duckdb
       - minio
     networks:
       - minio_network
-    # volumes:
-    #   - .:/app
+    tty: true
+    stdin_open: true
+    command: ["/bin/sh", "-c", "tail -f /dev/null"]
+    # Mount your entire project folder AND the two specific data dirs:
+    volumes:
+      - .:/app
+      - ./data:/app/data
+      - ./retrieved_data:/app/retrieved_data
+    # If you need environment variables for S3 or other services, uncomment and adjust:
     # environment:
     #   - S3_ENDPOINT=http://minio:9000
     #   - S3_USE_SSL=false
-    #   - S3_REGION=us-east-1
+    #   - S3_REGION=us-east-1git
     #   - S3_ACCESS_KEY=minioadmin
     #   - S3_SECRET_KEY=minioadmin
-    # command: ["python", "/app/src/orx-surghub/duckdb_database_creation.py"]
-    volumes:
-      - .:/app
-    tty: true             # keep TTY open
-    stdin_open: true      # optional if you want an interactive shell
-    command: ["/bin/sh", "-c", "tail -f /dev/null"]
 
 volumes:
   minio_data:
