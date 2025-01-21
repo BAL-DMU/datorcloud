@@ -1,17 +1,38 @@
+##############################################################
+## Docker Compose File for DuckDB and MinIO Services
+
+## This compose docker must to pre-load the docker images for DuckDB and MinIO services.
+## The images are available in the local repository docker folder: duckdb_image.tar and minio_image.tar
+## To load the images, use the following commands:
+## docker load -i docker/duckdb_image.tar
+## docker load -i docker/minio_image.tar
+
+## To run the docker compose, use the following command:
+## docker-compose up -d
+
+## If you do want to connect to DuckDB later, you can do:
+## docker exec -it duckdb bash or docker exec -it duckdb duckdb
+
+## To stop the services, use the following command:
+## docker-compose down
+##############################################################
+
+
 version: "3.8"
+
 services:
   # DuckDB Service
   duckdb:
-    image: duckdb/duckdb-cli:latest # Use the DuckDB CLI image from Docker Hub
+    image: jagh1729/duckdb:latest
+    container_name: duckdb
     volumes:
       - .:/orx-surgdatahub
     ports:
       - "8001:8001"
     stdin_open: true
     tty: true
-    command: tail -f /dev/null
     environment:
-      - S3_ENDPOINT=http://minio:9000 # Specify the full URL for MinIO
+      - S3_ENDPOINT=http://minio:9000
       - S3_USE_SSL=false
       - S3_REGION=us-east-1
       - S3_ACCESS_KEY=minioadmin
@@ -23,6 +44,7 @@ services:
 
   # MinIO Service
   minio:
+    # Use your locally loaded MinIO image/tag
     image: minio/minio:latest
     container_name: minio
     environment:
