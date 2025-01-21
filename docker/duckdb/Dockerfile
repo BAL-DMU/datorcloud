@@ -10,9 +10,9 @@ RUN apt-get update \
     unzip
 
 # Copy the pre-downloaded DuckDB CLI
-COPY ../../build/duckdb_cli.zip .
-RUN unzip duckdb_cli.zip \
-    && rm duckdb_cli.zip \
+COPY ../../build/duckdb_cli-linux-amd64.zip .
+RUN unzip duckdb_cli-linux-amd64.zip \
+    && rm duckdb_cli-linux-amd64.zip \
     && mv duckdb /usr/local/bin/duckdb \
     && chmod +x /usr/local/bin/duckdb
 
