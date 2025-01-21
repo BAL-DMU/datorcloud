@@ -1,43 +1,53 @@
 # File: build/python-client/Dockerfile
 FROM ubuntu:22.04
 
-# Prevent some interactive prompts during apt-get install
+# Prevent interactive prompts during apt operations
 ENV DEBIAN_FRONTEND=noninteractive
 
-# 1. Install Python 3.10, pip, and any system dependencies
+# 1. Install system dependencies needed for Miniconda installation
 RUN apt-get update && apt-get install -y \
-    python3.10 \
-    python3-pip \
+    wget \
+    bzip2 \
     ca-certificates \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Optionally ensure "python" points to python3.10
-RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1
+# 2. Download and install Miniconda
+#    This example uses the "latest" installer. You can pin a specific version if preferred.
+RUN wget --progress=bar:force:noscroll \
+    https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+    -O /tmp/miniconda.sh \
+    && /bin/bash /tmp/miniconda.sh -b -p /opt/conda \
+    && rm /tmp/miniconda.sh
 
-# 2. Copy the requirements file (if you keep it in the project root)
+# 3. Ensure conda is in PATH
+ENV PATH="/opt/conda/bin:${PATH}"
+
+# 4. Create a minimal environment and install Python 3.10 + data-science libraries
+#    (Alternatively, you could use conda create -n env_name python=3.10 <packages>,
+#     then conda activate it. Here, we install into the base environment for simplicity.)
+RUN conda install -y \
+    python=3.10 \
+    pip \
+    numpy \
+    pandas \
+    scikit-learn \
+    matplotlib \
+    && conda clean -ya
+
+# 5. Set up your working directory
 WORKDIR /app
-COPY requirements.txt /app/
 
-# 3. Install Python dependencies (including duckdb, minio, etc.)
-#    If your requirements.txt includes 'duckdb' and 'minio' or 'boto3', 
-#    then you can rely on that. Otherwise, you can explicitly install them below.
+# 6. Copy requirements if you still have Python packages to install via pip
+COPY requirements.txt /app/
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
 
-# 4. Copy your source code into the container
+# 7. Copy your application source code
 COPY src/ /app/src/
 
-# 5. (Optional) If you want default environment variables baked in, do it here:
-# ENV S3_ENDPOINT=http://minio:9000 \
-#     S3_USE_SSL=false \
-#     S3_REGION=us-east-1 \
-#     S3_ACCESS_KEY=minioadmin \
-#     S3_SECRET_KEY=minioadmin
-
-# 6. Set the working directory for your scripts
+# 8. Set the default working directory for your scripts
 WORKDIR /app/src
 
-# 7. Set a default command or entrypoint
-#    You can override this in docker-compose if needed
+# 9. Default command (override in docker-compose if needed)
 CMD ["python", "--version"]

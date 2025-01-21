@@ -7,8 +7,8 @@
 # -----------------------------------------------------------------
 
 # 1) Name/tag for your Docker image
-# IMAGE_NAME="dms-python-service"
-IMAGE_NAME="my-python-service"
+# IMAGE_NAME="my-python-service"
+IMAGE_NAME="dms-python-service"
 IMAGE_TAG="latest"
 
 # 2) Path to the Dockerfile (relative to the project root)
