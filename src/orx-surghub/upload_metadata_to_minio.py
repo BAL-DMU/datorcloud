@@ -4,7 +4,7 @@ from minio.error import S3Error
 
 # Configure MinIO client
 minio_client = Minio(
-    "localhost:9000",                # MinIO address
+        "minio:9000",                # MinIO address
     access_key="minioadmin",         # Access key (set in docker-compose)
     secret_key="minioadmin",         # Secret key (set in docker-compose)
     secure=False                     # Set to True if using HTTPS
