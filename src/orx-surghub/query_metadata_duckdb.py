@@ -4,11 +4,19 @@ import duckdb
 #duckdb.sql("INSTALL httpfs")
 #duckdb.sql("LOAD httpfs")
 
+# try:
+#     duckdb.sql("LOAD httpfs")
+#     print("HTTPFS loaded successfully")
+# except Exception as e:
+#     print(f"Error loading HTTPFS: {e}")
+
+## Loading the httpfs extension for HTTP/S access
 try:
-    duckdb.sql("LOAD httpfs")
-    print("HTTPFS loaded successfully")
+   # Specify the exact path to the extension
+   duckdb.sql("LOAD '/root/.duckdb/extensions/v1.2.0/linux_amd64_gcc4/httpfs.duckdb_extension'")
+   print("HTTPFS loaded successfully")
 except Exception as e:
-    print(f"Error loading HTTPFS: {e}")
+   print(f"Error loading HTTPFS: {e}")
 
 # Configure DuckDB to access MinIO
 duckdb.sql("SET s3_region='us-east-1'")

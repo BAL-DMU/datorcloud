@@ -4,11 +4,12 @@ FROM ubuntu:22.04
 # Prevent interactive prompts during apt operations
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Define DuckDB extensions path
-ENV DUCKDB_VERSION="v0.8.1"
+# Define DuckDB version and installation paths
+# Note: We explicitly use linux_amd64_gcc4 to match DuckDB's expected path
+ENV DUCKDB_VERSION="v1.2.0"
 ENV DUCKDB_EXTENSION_PATH="/root/.duckdb/extensions/${DUCKDB_VERSION}/linux_amd64_gcc4/"
 
-# 1. Install system dependencies needed for Miniconda, DuckDB extension installation, and vim
+# 1. Install system dependencies
 RUN apt-get update && apt-get install -y \
     wget \
     bzip2 \
@@ -20,19 +21,42 @@ RUN apt-get update && apt-get install -y \
     curl \
     file \
     gdb \
+    unzip \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# 2. Install Miniconda
+# 2. Install DuckDB CLI 1.2.0
+RUN curl --fail --location --progress-bar \
+    --output duckdb_cli-linux-amd64.zip \
+    https://github.com/duckdb/duckdb/releases/download/v1.2.0/duckdb_cli-linux-amd64.zip \
+    && unzip duckdb_cli-linux-amd64.zip \
+    && mv duckdb /usr/local/bin/ \
+    && chmod +x /usr/local/bin/duckdb \
+    && rm duckdb_cli-linux-amd64.zip
+
+# 3. Create DuckDB extension directory and install HTTPFS extension
+# Note: We create the directory with explicit permissions and ownership
+RUN mkdir -p ${DUCKDB_EXTENSION_PATH} \
+    && chmod 755 $(dirname ${DUCKDB_EXTENSION_PATH}) \
+    && curl -L --fail \
+    -o /tmp/httpfs.duckdb_extension.gz \
+    "https://extensions.duckdb.org/${DUCKDB_VERSION}/linux_amd64_gcc4/httpfs.duckdb_extension.gz" \
+    && gunzip /tmp/httpfs.duckdb_extension.gz \
+    && mv /tmp/httpfs.duckdb_extension ${DUCKDB_EXTENSION_PATH}httpfs.duckdb_extension \
+    && chmod 755 ${DUCKDB_EXTENSION_PATH}httpfs.duckdb_extension \
+    && echo '{"name": "httpfs", "version": "1.2.0"}' > ${DUCKDB_EXTENSION_PATH}httpfs.duckdb_extension.info \
+    && chmod 644 ${DUCKDB_EXTENSION_PATH}httpfs.duckdb_extension.info
+
+# 4. Install Miniconda
 RUN wget --progress=bar:force:noscroll \
     https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
     -O /tmp/miniconda.sh \
     && /bin/bash /tmp/miniconda.sh -b -p /opt/conda \
     && rm /tmp/miniconda.sh
 
-# 3. Ensure conda is in PATH
+# 5. Ensure conda is in PATH
 ENV PATH="/opt/conda/bin:${PATH}"
 
-# 4. Create a minimal environment and install Python 3.10 + data-science libraries
+# 6. Create a minimal environment and install Python 3.10 + data-science libraries
 RUN conda install -y \
     python=3.10 \
     pip \
@@ -42,26 +66,22 @@ RUN conda install -y \
     matplotlib \
     && conda clean -ya
 
-# 5. Install the latest DuckDB version and HTTPFS extension
-RUN pip install --no-cache-dir --upgrade duckdb
-RUN curl -L --fail -o /tmp/httpfs.duckdb_extension.gz http://extensions.duckdb.org/${DUCKDB_VERSION}/linux_amd64_gcc4/httpfs.duckdb_extension.gz \
-    && gunzip /tmp/httpfs.duckdb_extension.gz \
-    && mkdir -p ${DUCKDB_EXTENSION_PATH} \
-    && mv /tmp/httpfs.duckdb_extension ${DUCKDB_EXTENSION_PATH}httpfs.duckdb_extension \
-    && chmod 644 ${DUCKDB_EXTENSION_PATH}httpfs.duckdb_extension
+# 7. Install DuckDB 1.2.0 Python package
+RUN pip install --no-cache-dir duckdb==1.2.0
 
-# 6. Set working directory
+# 8. Verify DuckDB installation and extensions
+RUN python -c "import duckdb; print(f'DuckDB version: {duckdb.__version__}')" \
+    && ls -la ${DUCKDB_EXTENSION_PATH} \
+    && echo "DuckDB extension directory contents verified"
+
+# Rest of your Dockerfile remains the same...
 WORKDIR /app
-
-# 7. Copy requirements and source code
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 COPY src/ /app/src/
 
-# 8. Rename conflicting minio.py file if it exists
 RUN if [ -f /app/src/orx-surghub/minio.py ]; then \
-        mv /app/src/orx-surghub/minio.py /app/src/orx-surghub/minio_local.py; \
+    mv /app/src/orx-surghub/minio.py /app/src/orx-surghub/minio_local.py; \
     fi
 
-# 9. Set default command
 CMD ["python", "--version"]
