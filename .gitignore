@@ -2,3 +2,10 @@
 data/archive.zip
 data/metadata_orx-datahub.csv
 retrieved_data/
+
+## DuckDB files
+*.db
+*.ddb
+
+## docker images
+*.tar
