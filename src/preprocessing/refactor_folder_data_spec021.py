@@ -28,8 +28,8 @@ def restructure_folder(old_root: str, new_root: str):
     print("Restructuring completed successfully!")
 
 # Define paths
-old_structure_path = "data/4dor-dataset-Old-Structure/experiment-1"
-new_structure_path = "data/4dor-dataset-New-Structure/experiment-1"
+old_structure_path = "data/orx-dataset/experiment-1"
+new_structure_path = "data/orx-experiments/experiment-1"
 
 # Run restructuring function
 restructure_folder(old_structure_path, new_structure_path)
