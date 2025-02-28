@@ -4,15 +4,16 @@ import os
 
 # MinIO client configuration
 minio_client = Minio(
-    # "localhost:9000",               # Update with your MinIO address if different
-    "minio:9000",               # Update with your MinIO address if different
+    # "localhost:9000",             # Update with your MinIO address if different
+    "minio:9000",                   # Update with your MinIO address if different
     access_key="minioadmin",        # Access key (set in docker-compose)
     secret_key="minioadmin",        # Secret key (set in docker-compose)
     secure=False                    # Use True if using HTTPS
 )
 
 # Define the MinIO bucket name
-bucket_name = "orx-datalake"
+# bucket_name = "orx-datalake"
+bucket_name = "orx-experiments"
 
 # Create bucket if it does not exist
 try:
@@ -56,7 +57,7 @@ def upload_directory_to_minio(local_directory, minio_bucket, prefix=""):
 # Define dataset root directories and prefixes for each
 dataset_paths = {
     "4dor-dataset": "./data/4dor-dataset",
-    "orx-dataset": "./data/orx-dataset"
+    "orx-experiments": "./data/orx-experiments"
 }
 
 # Upload each dataset to MinIO with its respective folder structure as a prefix
