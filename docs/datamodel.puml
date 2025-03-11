@@ -1,0 +1,51 @@
+@startuml
+' Use better styling
+skinparam shadowing false
+skinparam linetype ortho
+skinparam monochrome true
+skinparam backgroundColor white
+skinparam handwritten false
+
+' Define entities with proper attributes and types
+entity "Experiment Card" as ExperimentCard {
+  *experiment_id : UUID <<PK>>
+  --
+  experiment_type : String
+  created_date : DateTime
+  description : Text
+}
+
+entity "File Objects" as FileObject {
+  *file_id : UUID <<PK>>
+  --
+  device_id : UUID <<FK>>
+  experiment_id : UUID <<FK>>
+  file_path : String
+  file_type : String
+  created_at : DateTime
+  +metadata : JSON
+}
+
+entity "Semantic Layer" as SemanticLayer {
+  *semantic_id : UUID <<PK>>
+  --
+  experiment_id : UUID <<FK>>
+  ontology_mapping : JSON
+  contextual_relationships : JSON
+  last_updated : DateTime
+}
+
+entity "Dataset Composition" as DatasetComposition {
+  *dataset_id : UUID <<PK>>
+  --
+  dataset_name : String
+  created_by : UUID
+  created_at : DateTime
+  description : Text
+}
+
+' Define relationships
+ExperimentCard "1" --o{ "many" FileObject : "contains"
+ExperimentCard "1" --o "1" SemanticLayer : "has"
+ExperimentCard "many" }--{ "many" DatasetComposition : "included in"
+@enduml
