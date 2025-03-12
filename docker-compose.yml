@@ -32,12 +32,14 @@ services:
   # DuckDB Service
   # -----------------------------------------------------
   duckdb:
-    image: jagh1729/duckdb:latest
+    image: jagh1729/duckdb:v1.2.1
     container_name: duckdb
     volumes:
       - .:/orx-surgdatahub
+      - ./start-duckdb.sh:/start-duckdb.sh
     ports:
       - "8001:8001"
+      - "4213:4213"
     stdin_open: true
     tty: true
     environment:
@@ -46,6 +48,8 @@ services:
       - S3_REGION=us-east-1
       - S3_ACCESS_KEY=minioadmin
       - S3_SECRET_KEY=minioadmin
+    # command: ["/bin/bash", "-c", "duckdb -ui --listen 0.0.0.0:4213 & tail -f /dev/null"]
+    entrypoint: ["/start-duckdb.sh"]
     depends_on:
       - minio
     networks:
