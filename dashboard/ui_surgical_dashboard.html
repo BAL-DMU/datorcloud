@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surgical Data Science Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 20px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+        }
+        .search-bar {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .dataset-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .dataset-card {
+            background: #fff;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Surgical Data Science Dashboard</h1>
+        <input type="text" id="search" class="search-bar" placeholder="Search experiments..." onkeyup="filterDatasets()">
+        <div class="dataset-list" id="datasetList"></div>
+    </div>
+
+    <script>
+        let datasets = [];
+
+        async function loadDatasets() {
+            try {
+                const response = await fetch('datasets.json'); // Fetch external JSON file
+                datasets = await response.json();
+                displayDatasets(datasets);
+            } catch (error) {
+                console.error("Error loading datasets:", error);
+            }
+        }
+
+        function displayDatasets(data) {
+            const datasetList = document.getElementById("datasetList");
+            datasetList.innerHTML = "";
+            data.forEach(dataset => {
+                const card = document.createElement("div");
+                card.className = "dataset-card";
+                card.innerHTML = `<strong>${dataset.name}</strong><br>Type: ${dataset.type}<br>Size: ${dataset.size}<br>Date: ${dataset.date}`;
+                datasetList.appendChild(card);
+            });
+        }
+
+        function filterDatasets() {
+            const query = document.getElementById("search").value.toLowerCase();
+            const filtered = datasets.filter(dataset => dataset.name.toLowerCase().includes(query));
+            displayDatasets(filtered);
+        }
+
+        document.addEventListener("DOMContentLoaded", loadDatasets);
+    </script>
+</body>
+</html>

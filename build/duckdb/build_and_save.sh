@@ -9,7 +9,8 @@ set -Eeuo pipefail
 USERNAME="jagh1729"
 
 # Name and tag for the Docker image
-IMAGE_NAME="${USERNAME}/duckdb:latest"
+# IMAGE_NAME="${USERNAME}/duckdb:latest"
+IMAGE_NAME="${USERNAME}/duckdb:v1.2.1"
 
 echo "Building the Docker image: $IMAGE_NAME..."
 docker build -t "$IMAGE_NAME" .

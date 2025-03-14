@@ -8,4 +8,4 @@ retrieved_data/
 *.ddb
 
 ## docker images
-*.tar
+*.tar.env.prod

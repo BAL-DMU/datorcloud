@@ -32,20 +32,20 @@ services:
   # DuckDB Service
   # -----------------------------------------------------
   duckdb:
-    image: jagh1729/duckdb:latest
+    image: jagh1729/duckdb:v1.2.1
     container_name: duckdb
     volumes:
       - .:/orx-surgdatahub
     ports:
-      - "8001:8001"
+      - "${DUCKDB_PORT:-8001}:8001"
     stdin_open: true
     tty: true
     environment:
-      - S3_ENDPOINT=http://minio:9000
-      - S3_USE_SSL=false
-      - S3_REGION=us-east-1
-      - S3_ACCESS_KEY=minioadmin
-      - S3_SECRET_KEY=minioadmin
+      - S3_ENDPOINT=${S3_ENDPOINT:-http://minio:9000}
+      - S3_USE_SSL=${S3_USE_SSL:-false}
+      - S3_REGION=${S3_REGION:-us-east-1}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY:-minioadmin}
+      - S3_SECRET_KEY=${S3_SECRET_KEY:-minioadmin}
     depends_on:
       - minio
     networks:
@@ -58,14 +58,13 @@ services:
     image: minio/minio:latest
     container_name: minio
     environment:
-      - MINIO_ROOT_USER=minioadmin
-      - MINIO_ROOT_PASSWORD=minioadmin
-    # Direct bind mount to host path on "/data/02_OR-X/datasets/orx-datalake/"
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-minioadmin}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-minioadmin}
     volumes:
-      - /data/02_OR-X/datasets/orx-datalake:/data
+      - ${DATAWAREHOUSE_PATH:-/data/02_OR-X/datasets/orx-datalake}:/data
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
     command: server /data --console-address ":9001"
     networks:
       - minio_network
@@ -74,7 +73,7 @@ services:
   # Python Runner Service (Ubuntu 22.04 + Python 3.10)
   # -----------------------------------------------------
   python-runner:
-    image: dms-python-service:latest  # Same name/tag built & saved by your script
+    image: jagh1729/dms-python-service:latest 
     container_name: python-runner
     depends_on:
       - duckdb
@@ -84,18 +83,17 @@ services:
     tty: true
     stdin_open: true
     command: ["/bin/sh", "-c", "tail -f /dev/null"]
-    # Mount your entire project folder AND the two specific data dirs:
     volumes:
       - .:/app
-      - ./data:/app/data
-      - ./retrieved_data:/app/retrieved_data
-    # If you need environment variables for S3 or other services, uncomment and adjust:
-    # environment:
-    #   - S3_ENDPOINT=http://minio:9000
-    #   - S3_USE_SSL=false
-    #   - S3_REGION=us-east-1git
-    #   - S3_ACCESS_KEY=minioadmin
-    #   - S3_SECRET_KEY=minioadmin
+      - ${DATALAKE_PATH:-/data}:/app/data
+      - ${RETRIEVED_DATA_PATH:-/app/retrieved_data}:/app/retrieved_data
+    environment:
+      - S3_ENDPOINT=${S3_ENDPOINT:-http://minio:9000}
+      - S3_USE_SSL=${S3_USE_SSL:-false}
+      - S3_REGION=${S3_REGION:-us-east-1}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY:-minioadmin}
+      - S3_SECRET_KEY=${S3_SECRET_KEY:-minioadmin}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
 
 # volumes:
 #   minio_data:

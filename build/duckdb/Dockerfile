@@ -1,10 +1,13 @@
 FROM ubuntu:latest
 
 # Install dependencies
-RUN apt-get update && apt-get install -y unzip
+# RUN apt-get update && apt-get install -y unzip xdg-utils lynx www-browser
+# RUN apt-get update && apt-get install -y unzip xdg-utils www-browser
+RUN apt-get update && apt-get install -y unzip lynx xdg-utils net-tools
 
 # Copy the pre-downloaded CLI file
 COPY duckdb_cli-linux-amd64.zip /tmp/
+# COPY duckdb_cli-linux-amd64-v1.2.1.zip /tmp/
 
 RUN unzip /tmp/duckdb_cli-linux-amd64.zip -d /usr/local/bin/ && \
     chmod +x /usr/local/bin/duckdb && \
