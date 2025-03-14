@@ -9,3 +9,7 @@ retrieved_data/
 
 ## docker images
 *.tar.env.prod
+
+## .env file
+.env.prod
+
