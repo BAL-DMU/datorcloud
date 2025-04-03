@@ -1,6 +1,6 @@
-# ORX-SurgDataHub
+# Surgical Data Cloud Platform - SDCHub
 
-A Surgical Data Science Platform for Managing and Populate Multimodal Datasets
+A Surgical Data Cloud Platform for Managing and Populate Multimodal Datasets
 
 ## Deployment
 
