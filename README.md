@@ -1,7 +1,6 @@
 # DatorHub - Multimodal Data Management and Sharing Platform
 
-DatorHub is an advanced web-based data sharing platform designed for managing and publishing multimodal datasets. Originally developed as orx-surgdatahub, DatorHub has evolved to support a broader scope, extending beyond surgical data to accommodate general datasets and AI/ML workflows.
-
+DatorHub is an advanced web-based data sharing platform designed for managing, analyzing and publishing multimodal datasets. Originally developed as orx-surgdatahub, DatorHub has evolved to support a broader scope, extending beyond surgical data to accommodate general datasets and AI/ML workflows.
 
 Key Components
 1. ORX-Experiments
