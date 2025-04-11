@@ -1,14 +1,14 @@
 # DatorHub - Multimodal Data Management and Sharing Platform
 
-DatorHub is an advanced web-based data sharing platform designed for managing, analyzing and publishing multimodal datasets. Originally developed as orx-surgdatahub, DatorHub has evolved to support a broader scope, extending beyond surgical data to accommodate general datasets and AI/ML workflows.
+DatorHub is an advanced, web-based platform for managing, analyzing, and publishing multimodal datasets. It seamlessly integrates with Balgrist JupyterHub Spaces, providing secure, interactive cloud environments tailored for collaborative research, general dataset management, and AI/ML workflows.
 
 Key Components
-1. ORX-Experiments
+1. Experiments
 - Manages and structures multimodal data collected from OR-X data hubs during surgical experiments.
 - Efficiently handles heterogeneous data formats from diverse sources, including images, videos, sensor data, and metadata.
 - Ensures data consistency and traceability across experiments.
 
-2. ORX-Datasets
+2. Datasets
 - Aggregates individual surgical experiments into well-curated datasets.
 - Securely hosts datasets in the public cloud for open research access.
 - Provides structured metadata and version control to maintain data integrity.
@@ -18,7 +18,7 @@ Key Components
  - Multimodal Data Management: Integrates data from surgical experiments and AI workflows, including videos, sensor logs, and clinical notes.
  - Dataset Curation: Converts raw experimental data into structured, sharable datasets.
  - Cloud Hosting: Utilizes the public cloud for secure and scalable data storage.
- - AI/ML Workflow Support: Facilitates data-driven research by integrating with AI tools at the ETH AI Center.
+ - AI/ML Workflow Support: Facilitates data-driven research by integrating with AI tools in the OR-X Translation Center for Surgery and Balgrist University Hospital communities.
  - Web-Based Interface: User-friendly interface for managing, uploading, and accessing datasets.
 
 
