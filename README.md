@@ -1,6 +1,6 @@
-# DatorHub - Multimodal Data Management and Sharing Platform
+# datorcloud - Multimodal Data Management and Sharing Platform
 
-DatorHub is an advanced, web-based platform for managing, analyzing, and publishing multimodal datasets. It seamlessly integrates with Balgrist JupyterHub Spaces, providing secure, interactive cloud environments tailored for collaborative research, general dataset management, and AI/ML workflows.
+datorcloud is an advanced, web-based platform for managing, analyzing, and publishing multimodal datasets. It seamlessly integrates with Balgrist JupyterHub Spaces, providing secure, interactive cloud environments tailored for collaborative research, general dataset management, and AI/ML workflows.
 
 Key Components
 1. Experiments
