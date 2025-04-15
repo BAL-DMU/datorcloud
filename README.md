@@ -1,6 +1,14 @@
 # datorcloud - Multimodal Data Management and Sharing Platform
 
-datorcloud is an advanced, web-based platform for managing, analyzing, and publishing multimodal datasets. It seamlessly integrates with Balgrist JupyterHub Spaces, providing secure, interactive cloud environments tailored for collaborative research, general dataset management, and AI/ML workflows.
+**DatorCloud** is a lightweight, self-hosted cloud platform developed at Balgrist University Hospital and the OR-X Translational Center for Surgery. It simplifies the management, querying, and sharing of multimodal research data—including images, videos, sensor data, and clinical records—using **DuckDB** for fast, SQL-like analytics and **MinIO** for S3-compatible object storage.
+
+Designed for research teams and institutions, DatorCloud offers a modular and scalable solution for organizing and exploring complex datasets without requiring heavy infrastructure.
+
+### Key Features
+- **Multimodal Data Management**: Organize and access diverse datasets in a structured, web-based environment.
+- **Unified Dataset Catalog**: Browse and manage datasets by project, researcher, or experimental context.
+- **Custom Dataset Composition**: Create tailored datasets using SQL-like queries over object storage.
+- **Efficient, Traceable Access**: Query large datasets directly with DuckDB and MinIO CLIs, reducing duplication and enabling reproducible analysis.
 
 Key Components
 1. Experiments
@@ -13,13 +21,6 @@ Key Components
 - Securely hosts datasets in the public cloud for open research access.
 - Provides structured metadata and version control to maintain data integrity.
 
-
-## Core Features
- - Multimodal Data Management: Integrates data from surgical experiments and AI workflows, including videos, sensor logs, and clinical notes.
- - Dataset Curation: Converts raw experimental data into structured, sharable datasets.
- - Cloud Hosting: Utilizes the public cloud for secure and scalable data storage.
- - AI/ML Workflow Support: Facilitates data-driven research by integrating with AI tools in the OR-X Translation Center for Surgery and Balgrist University Hospital communities.
- - Web-Based Interface: User-friendly interface for managing, uploading, and accessing datasets.
 
 
 ## Deployment
