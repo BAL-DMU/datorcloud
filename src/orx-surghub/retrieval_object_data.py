@@ -6,7 +6,7 @@ import os
 # Configure MinIO client
 minio_client = Minio(
     # "localhost:9000",
-    "minio:9000",
+    "minio:9090",
     access_key="minioadmin",
     secret_key="minioadmin",
     secure=False
@@ -35,7 +35,7 @@ except Exception as e:
 duckdb.sql("SET s3_region='us-east-1'")
 duckdb.sql("SET s3_access_key_id='minioadmin'")
 duckdb.sql("SET s3_secret_access_key='minioadmin'")
-duckdb.sql("SET s3_endpoint='minio:9000'")
+duckdb.sql("SET s3_endpoint='minio:9090'")
 # duckdb.sql("SET s3_endpoint='localhost:9000'")
 duckdb.sql("SET s3_url_style='path'")
 duckdb.sql("SET s3_use_ssl=false")

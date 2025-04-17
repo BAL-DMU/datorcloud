@@ -5,7 +5,7 @@ import os
 # MinIO client configuration
 minio_client = Minio(
     # "localhost:9000",             # Update with your MinIO address if different
-    "minio:9000",                   # Update with your MinIO address if different
+    "minio:9090",                   # Update with your MinIO address if different
     access_key="minioadmin",        # Access key (set in docker-compose)
     secret_key="minioadmin",        # Secret key (set in docker-compose)
     secure=False                    # Use True if using HTTPS
