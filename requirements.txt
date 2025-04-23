@@ -1,6 +1,10 @@
 # Core dependencies for the collector and data ingestion client service
 #duckdb==0.8.1
-minio==7.1.15
+minio>=7.1.15
+duckdb>=1.2.0 # 0.8.1
+pandas>=1.5.3
+pytest>=7.3.1
+dagster>=1.4.0
 
 # Documentation dependencies
 mkdocs==1.5.2
@@ -10,3 +14,7 @@ pymdown-extensions==10.0
 
 # Debug the MinIO File Access
 boto3==1.18.63
+
+# Dagster dependencies
+dagster-webserver==1.4.0
+pendulum==2.1.2

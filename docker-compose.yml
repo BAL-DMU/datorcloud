@@ -17,7 +17,8 @@
 ## If you do want to connect to MinIO later, you can do:
 ## docker exec -it minio bash or docker exec -it minio mc
 
-## If you do want to connect to Python Runner later, you can do:
+## If you do want to connect to DatorCloud-CLI or Python Runner later, you can do:
+## docker exec -it datorcloud-cli bash
 ## docker exec -it python-runner bash
 
 ## To stop the services, use the following command:
@@ -94,6 +95,33 @@ services:
       - S3_ACCESS_KEY=${S3_ACCESS_KEY}
       - S3_SECRET_KEY=${S3_SECRET_KEY}
       - ENVIRONMENT=${ENVIRONMENT}
+
+  # -----------------------------------------------------
+  # DatorCloud CLI Service
+  # -----------------------------------------------------
+  datorcloud-cli:
+    image: jagh1729/datorcloud-cli:latest
+    container_name: datorcloud-cli
+    depends_on:
+      - duckdb
+      - minio
+    networks:
+      - minio_network
+    tty: true
+    stdin_open: true
+    command: ["/bin/sh", "-c", "tail -f /dev/null"]
+    volumes:
+      - ./:/app
+      - ${DATALAKE_PATH}:/app/data
+      - ${RETRIEVED_DATA_PATH}:/app/retrieved_data
+    environment:
+      - S3_ENDPOINT=${S3_ENDPOINT}
+      - S3_USE_SSL=${S3_USE_SSL}
+      - S3_REGION=${S3_REGION}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - ENVIRONMENT=${ENVIRONMENT}
+
 
 # volumes:
 #   minio_data:
