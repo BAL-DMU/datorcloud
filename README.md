@@ -1,50 +1,98 @@
-# datorcloud - Multimodal Data Management and Sharing Platform
+# DatorCloud
 
-**DatorCloud** is a lightweight, self-hosted cloud platform developed at Balgrist University Hospital and the OR-X Translational Center for Surgery. It simplifies the management, querying, and sharing of multimodal research data—including images, videos, sensor data, and clinical records—using **DuckDB** for fast, SQL-like analytics and **MinIO** for S3-compatible object storage.
+A Python package for managing data and metadata with MinIO integration and Dagster workflow support.
 
-Designed for research teams and institutions, DatorCloud offers a modular and scalable solution for organizing and exploring complex datasets without requiring heavy infrastructure.
-
-### Key Features
-- **Multimodal Data Management**: Organize and access diverse datasets in a structured, web-based environment.
-- **Unified Dataset Catalog**: Browse and manage datasets by project, researcher, or experimental context.
-- **Custom Dataset Composition**: Create tailored datasets using SQL-like queries over object storage.
-- **Efficient, Traceable Access**: Query large datasets directly with DuckDB and MinIO CLIs, reducing duplication and enabling reproducible analysis.
-
-Key Components
-1. Experiments
-- Manages and structures multimodal data collected from OR-X data hubs during surgical experiments.
-- Efficiently handles heterogeneous data formats from diverse sources, including images, videos, sensor data, and metadata.
-- Ensures data consistency and traceability across experiments.
-
-2. Datasets
-- Aggregates individual surgical experiments into well-curated datasets.
-- Securely hosts datasets in the public cloud for open research access.
-- Provides structured metadata and version control to maintain data integrity.
-
-
-
-## Deployment
-
-### Launch Docker Compose Services
-
-To start both DuckDB and MinIO services, run:
+## Installation
 
 ```bash
-sudo docker-compose up -d --build
+pip install datorcloud
 ```
 
-Notes:
-    + For local setup, use localhost:9000 as the MinIO endpoint.
-    + For inter-container communication in Docker Compose, use minio:9000 (the service name).
+## Features
 
-### Conda Enviroment
+- MinIO object storage integration
+- Metadata generation and management
+- Dagster assets for data workflows
+- Dataset upload and retrieval
 
-Create a new conda environment with the following command:
-`conda create -n orx-surghub python=3.10.14`
+## Usage
 
-Actiavte the environment with the following command:
-`conda activate orx-surghub`
+### Basic Usage
 
-Install the required packages with the following command:
-`pip install -r requirements.txt`
+```python
+from datorcloud import MinioObjectComponent, MetadataGeneratorComponent
+
+# Initialize MinIO component
+minio_component = MinioObjectComponent(
+    endpoint="minio:9090",
+    bucket_name="orx-datalake"
+)
+
+# Upload a dataset
+minio_component.upload_directory(
+    directory_path="./data/my-dataset",
+    object_prefix="my-dataset/"
+)
+
+# Generate metadata
+metadata_component = MetadataGeneratorComponent(
+    output_file="./metadata.csv",
+    minio_component=minio_component
+)
+
+metadata_component.generate_metadata(
+    dataset_dirs={"my-dataset": "./data/my-dataset"}
+)
+```
+
+### Dagster Integration
+
+DatorCloud provides Dagster assets for creating data workflows:
+
+```python
+from dagster import Definitions, define_asset_job, AssetSelection
+from datorcloud.dagster import (
+    DatorCloudComponents,
+    component_assets
+)
+
+# Initialize components
+dator_components = DatorCloudComponents(
+    minio_endpoint="minio:9090",
+    data_bucket="orx-datalake",
+    metadata_bucket="orx-metadata",
+    local_data_dir="./data",
+    local_download_dir="./retrieved_data"
+)
+
+# Create a job
+datorcloud_job = define_asset_job(
+    name="datorcloud_workflow_job",
+    selection=AssetSelection.assets(*component_assets)
+)
+
+# Define Dagster definitions
+defs = Definitions(
+    assets=component_assets,
+    jobs=[datorcloud_job],
+    resources={
+        "components": dator_components
+    }
+)
+```
+
+See the `examples` directory for complete workflow examples.
+
+## Example Workflow
+
+The package includes predefined Dagster assets for common operations:
+
+1. `upload_datasets` - Upload datasets to MinIO
+2. `generate_metadata` - Generate metadata for uploaded datasets
+3. `query_metadata` - Query the metadata based on filters
+4. `retrieve_objects` - Download objects based on metadata queries
+
+## License
+
+MIT
 
