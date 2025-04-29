@@ -1,4 +1,17 @@
-# DatorCloud
+# DatorCloud - Multimodal Data Management and Sharing Platform
+
+**DatorCloud** is a lightweight, self-hosted cloud platform developed at Balgrist University Hospital and the OR-X Translational Center for Surgery. It simplifies the management, querying, and sharing of multimodal research data—including images, videos, sensor data, and clinical records—using **DuckDB** for fast, SQL-like analytics and **MinIO** for S3-compatible object storage.
+
+Designed for research teams and institutions, DatorCloud offers a modular and scalable solution for organizing and exploring complex datasets without requiring heavy infrastructure.
+
+### Key Features
+- **Multimodal Data Management**: Organize and access diverse datasets in a structured, web-based environment.
+- **Unified Dataset Catalog**: Browse and manage datasets by project, researcher, or experimental context.
+- **Custom Dataset Composition**: Create tailored datasets using SQL-like queries over object storage.
+- **Efficient, Traceable Access**: Query large datasets directly with DuckDB and MinIO CLIs, reducing duplication and enabling reproducible analysis.
+
+
+## DatorCloud Component
 
 A Python package for managing data and metadata with MinIO integration and Dagster workflow support.
 
