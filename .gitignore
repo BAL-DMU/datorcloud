@@ -3,6 +3,12 @@ data/archive.zip
 data/metadata_orx-datahub.csv
 retrieved_data/
 
+## DatorCloud
+datorcloud/__pycache__/*
+datorcloud/dagster/__pycache__/*
+datorcloud/components/__pycache__/*
+datorcloud/core/__pycache__/*
+
 ## DuckDB files
 *.db
 *.ddb
