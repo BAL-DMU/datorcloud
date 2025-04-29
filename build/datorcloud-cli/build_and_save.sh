@@ -4,6 +4,9 @@
 # build_datorcloud_cli.sh
 # A script to build and save the DatorCloud CLI Docker image
 # from an Ubuntu 22.04 + Python 3.10 Dockerfile.
+#
+# Usage:    
+#   bash build/datorcloud-cli/build_and_save.sh
 # -----------------------------------------------------------------
 
 # 1) Name/tag for your Docker image
