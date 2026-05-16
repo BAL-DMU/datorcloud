@@ -1,277 +1,296 @@
-from dagster import asset, AssetIn, Output, MetadataValue
-from typing import Dict, List, Any, Optional
+"""Dagster assets and resource for the DatorCloud component pipeline.
 
-from ..core.datorcloud_orchestrator import DatorCloudOrchestrator
-from ..components.minio_component import MinioObjectComponent
+The four assets form a linear pipeline:
+
+    upload_datasets -> generate_metadata -> query_metadata -> retrieve_objects
+
+All assets share a single :class:`DatorCloudResource`, a Pydantic-based
+``ConfigurableResource`` that lazily builds the underlying components. Per-asset
+inputs (dataset paths, filters, limits, ...) are supplied through dedicated
+``dagster.Config`` classes, which makes them configurable from ``run_config``
+and keeps the asset function signatures Dagster-compatible.
+
+Note: ``from __future__ import annotations`` is intentionally *not* used here.
+Dagster's ``@asset`` decorator inspects runtime type annotations to wire up
+``Config`` and resource parameters; stringified annotations break that
+resolution.
+"""
+
+import logging
+from typing import Any, Dict, List, Optional
+
+from dagster import (
+    AssetIn,
+    Config,
+    ConfigurableResource,
+    MetadataValue,
+    Output,
+    asset,
+)
+from pydantic import Field
+
 from ..components.metadata_generator_component import MetadataGeneratorComponent
 from ..components.metadata_storage_component import MetadataStorageComponent
+from ..components.minio_component import MinioObjectComponent
 from ..components.query_component import QueryComponent
 from ..components.retrieval_component import ObjectRetrievalComponent
 
+log = logging.getLogger(__name__)
 
-class DatorCloudComponents:
-    """Container class holding DatorCloud components for Dagster assets."""
-    
-    def __init__(
-        self,
-        minio_endpoint: str = "minio:9090",
-        minio_access_key: str = "minioadmin",
-        minio_secret_key: str = "minioadmin",
-        minio_secure: bool = False,
-        s3_region: str = "us-east-1",
-        data_bucket: str = "orx-datalake",
-        metadata_bucket: str = "orx-metadata",
-        local_data_dir: str = "./data",
-        local_download_dir: str = "./retrieved_data"
-    ):
-        """
-        Initialize DatorCloud components.
-        
-        Args:
-            minio_endpoint: MinIO server endpoint
-            minio_access_key: MinIO access key
-            minio_secret_key: MinIO secret key
-            minio_secure: Whether to use HTTPS for MinIO
-            s3_region: S3 region for DuckDB
-            data_bucket: Bucket for datasets
-            metadata_bucket: Bucket for metadata
-            local_data_dir: Local directory for data
-            local_download_dir: Local directory for downloaded files
-        """
-        # Initialize components
-        self.minio_component = MinioObjectComponent(
-            endpoint=minio_endpoint,
-            access_key=minio_access_key,
-            secret_key=minio_secret_key,
-            secure=minio_secure
+
+class DatorCloudResource(ConfigurableResource):
+    """Dagster resource that exposes the DatorCloud components.
+
+    Configuration values mirror :class:`datorcloud.core.DatorCloudOrchestrator`.
+
+    ``ConfigurableResource`` instances are Pydantic models that Dagster may
+    rebuild between contexts. Storing component instances directly on ``self``
+    therefore does not survive a materialization. We instead build components
+    on every access (they are cheap to construct) and expose a
+    :meth:`build_orchestrator` helper that callers can use when they want a
+    single object holding all of them.
+    """
+
+    minio_endpoint: str = "minio:9090"
+    minio_access_key: str = "minioadmin"
+    minio_secret_key: str = "minioadmin"
+    minio_secure: bool = False
+    s3_region: str = "us-east-1"
+    data_bucket: str = "orx-datalake"
+    metadata_bucket: str = "orx-metadata"
+    local_data_dir: str = "./data"
+    local_download_dir: str = "./retrieved_data"
+    duckdb_extension_path: Optional[str] = Field(
+        default=None,
+        description="Optional explicit path to the DuckDB httpfs extension.",
+    )
+
+    def _build_minio(self) -> MinioObjectComponent:
+        return MinioObjectComponent(
+            endpoint=self.minio_endpoint,
+            access_key=self.minio_access_key,
+            secret_key=self.minio_secret_key,
+            secure=self.minio_secure,
         )
-        
-        self.metadata_generator = MetadataGeneratorComponent()
-        
-        self.query_component = QueryComponent(
-            s3_region=s3_region,
-            s3_endpoint=minio_endpoint,
-            s3_access_key=minio_access_key,
-            s3_secret_key=minio_secret_key,
-            s3_use_ssl=minio_secure
+
+    def _build_query(self) -> QueryComponent:
+        return QueryComponent(
+            s3_region=self.s3_region,
+            s3_endpoint=self.minio_endpoint,
+            s3_access_key=self.minio_access_key,
+            s3_secret_key=self.minio_secret_key,
+            s3_use_ssl=self.minio_secure,
+            duckdb_extension_path=self.duckdb_extension_path,
         )
-        
-        self.metadata_storage = MetadataStorageComponent(
-            minio_component=self.minio_component,
-            metadata_bucket=metadata_bucket
+
+    @property
+    def minio(self) -> MinioObjectComponent:
+        return self._build_minio()
+
+    @property
+    def metadata_generator(self) -> MetadataGeneratorComponent:
+        return MetadataGeneratorComponent()
+
+    @property
+    def metadata_storage(self) -> MetadataStorageComponent:
+        return MetadataStorageComponent(
+            minio_component=self.minio,
+            metadata_bucket=self.metadata_bucket,
         )
-        
-        self.retrieval_component = ObjectRetrievalComponent(
-            minio_component=self.minio_component,
-            query_component=self.query_component,
-            local_base_dir=local_download_dir
+
+    @property
+    def query(self) -> QueryComponent:
+        return self._build_query()
+
+    @property
+    def retrieval(self) -> ObjectRetrievalComponent:
+        minio = self.minio
+        return ObjectRetrievalComponent(
+            minio_component=minio,
+            query_component=self._build_query(),
+            local_base_dir=self.local_download_dir,
         )
-        
-        # Store configuration
-        self.data_bucket = data_bucket
-        self.metadata_bucket = metadata_bucket
-        self.local_data_dir = local_data_dir
-        self.local_download_dir = local_download_dir
+
+    def default_metadata_s3_path(self, object_name: str = "metadata.csv") -> str:
+        return f"s3://{self.metadata_bucket}/{object_name}"
+
+
+class UploadDatasetsConfig(Config):
+    """Configuration for the ``upload_datasets`` asset."""
+
+    dataset_paths: Dict[str, str]
+    bucket_name: Optional[str] = None
+
+
+class GenerateMetadataConfig(Config):
+    """Configuration for the ``generate_metadata`` asset."""
+
+    dataset_dirs: Dict[str, str]
+    output_file: str = "./data/metadata.csv"
+    bucket_name: Optional[str] = None
+    object_name: str = "metadata.csv"
+
+
+class QueryMetadataConfig(Config):
+    """Configuration for the ``query_metadata`` asset."""
+
+    filters: Dict[str, Any] = {}
+    limit: Optional[int] = None
+    metadata_file: Optional[str] = None
+
+
+class RetrieveObjectsConfig(Config):
+    """Configuration for the ``retrieve_objects`` asset."""
+
+    dataset: str
+    filters: Dict[str, Any] = {}
+    max_files: Optional[int] = None
+    metadata_file: Optional[str] = None
 
 
 @asset
 def upload_datasets(
-    components: DatorCloudComponents,
-    dataset_paths: Dict[str, str],
-    bucket_name: Optional[str] = None
-) -> Dict[str, List[Dict[str, Any]]]:
-    """
-    Upload datasets to MinIO storage.
-    
-    Args:
-        components: DatorCloud components container
-        dataset_paths: Dictionary mapping dataset names to directory paths
-        bucket_name: Optional bucket name override
-        
-    Returns:
-        Dictionary with upload results
-    """
-    target_bucket = bucket_name or components.data_bucket
-    components.minio_component.ensure_bucket_exists(target_bucket)
-    
-    results = {}
-    for dataset_name, dataset_path in dataset_paths.items():
-        results[dataset_name] = components.minio_component.upload_directory(
-            local_directory=dataset_path,
-            bucket_name=target_bucket,
-            prefix=dataset_name
+    config: UploadDatasetsConfig,
+    datorcloud: DatorCloudResource,
+) -> Output[Dict[str, List[Dict[str, Any]]]]:
+    """Upload one or more dataset directories to MinIO."""
+    bucket = config.bucket_name or datorcloud.data_bucket
+    datorcloud.minio.ensure_bucket_exists(bucket)
+
+    results: Dict[str, List[Dict[str, Any]]] = {}
+    for name, path in config.dataset_paths.items():
+        results[name] = datorcloud.minio.upload_directory(
+            local_directory=path,
+            bucket_name=bucket,
+            prefix=name,
         )
-    
-    # Calculate metrics
-    total_files = sum(len(files) for files in results.values())
+
+    total = sum(len(files) for files in results.values())
     successful = sum(
         len([f for f in files if f.get("status") == "success"])
         for files in results.values()
     )
-    
-    # Return with metadata
+    log.info("upload_datasets: %s/%s files uploaded", successful, total)
     return Output(
         results,
         metadata={
-            "total_files": total_files,
+            "total_files": total,
             "successful_uploads": successful,
-            "datasets": len(dataset_paths)
-        }
+            "datasets": len(config.dataset_paths),
+            "bucket": bucket,
+        },
     )
 
 
-@asset(
-    ins={"upload_results": AssetIn("upload_datasets")}
-)
+@asset(ins={"upload_results": AssetIn("upload_datasets")})
 def generate_metadata(
-    components: DatorCloudComponents,
+    config: GenerateMetadataConfig,
+    datorcloud: DatorCloudResource,
     upload_results: Dict[str, List[Dict[str, Any]]],
-    dataset_dirs: Dict[str, str],
-    output_file: str = "metadata.csv",
-    bucket_name: Optional[str] = None,
-    object_name: Optional[str] = None
-) -> Dict[str, Any]:
-    """
-    Generate and upload metadata.
-    
-    Args:
-        components: DatorCloud components container
-        upload_results: Results from dataset upload
-        dataset_dirs: Dictionary mapping dataset names to directory paths
-        output_file: Local path to save metadata CSV
-        bucket_name: Optional bucket name override
-        object_name: Optional object name override
-        
-    Returns:
-        Dictionary with metadata information
-    """
-    metadata_df = components.metadata_storage.create_metadata_and_store(
-        metadata_generator_component=components.metadata_generator,
-        dataset_dirs=dataset_dirs,
-        local_file_path=output_file,
-        bucket_name=bucket_name,
-        object_name=object_name
+) -> Output[Dict[str, Any]]:
+    """Generate and upload metadata for the configured datasets."""
+    df = datorcloud.metadata_storage.create_metadata_and_store(
+        metadata_generator_component=datorcloud.metadata_generator,
+        dataset_dirs=config.dataset_dirs,
+        local_file_path=config.output_file,
+        bucket_name=config.bucket_name,
+        object_name=config.object_name,
     )
-    
-    # Return with metadata
+    payload = {
+        "record_count": int(len(df)),
+        "datasets": list(config.dataset_dirs.keys()),
+        "columns": list(df.columns),
+        "output_file": config.output_file,
+        "metadata_file": datorcloud.default_metadata_s3_path(config.object_name),
+    }
     return Output(
-        {
-            "record_count": len(metadata_df),
-            "datasets": list(dataset_dirs.keys()),
-            "columns": list(metadata_df.columns),
-            "output_file": output_file
-        },
+        payload,
         metadata={
-            "record_count": len(metadata_df),
-            "datasets": MetadataValue.json(list(dataset_dirs.keys())),
-            "columns": MetadataValue.json(list(metadata_df.columns))
-        }
+            "record_count": payload["record_count"],
+            "datasets": MetadataValue.json(payload["datasets"]),
+            "columns": MetadataValue.json(payload["columns"]),
+            "object_name": config.object_name,
+        },
     )
 
 
-@asset(
-    ins={"metadata_info": AssetIn("generate_metadata")}
-)
+@asset(ins={"metadata_info": AssetIn("generate_metadata")})
 def query_metadata(
-    components: DatorCloudComponents,
+    config: QueryMetadataConfig,
+    datorcloud: DatorCloudResource,
     metadata_info: Dict[str, Any],
-    filters: Dict[str, Any],
-    limit: Optional[int] = None,
-    metadata_file: Optional[str] = None
-) -> Dict[str, Any]:
-    """
-    Query metadata from the metadata store.
-    
-    Args:
-        components: DatorCloud components container
-        metadata_info: Information about the metadata
-        filters: Dictionary of column:value filters
-        limit: Maximum number of results
-        metadata_file: Optional S3 path to metadata file
-        
-    Returns:
-        Dictionary with query results
-    """
-    # If metadata_file not provided, use default
-    if metadata_file is None:
-        metadata_file = f"s3://{components.metadata_bucket}/metadata.csv"
-    
-    results_df = components.query_component.query_metadata(
-        metadata_file=metadata_file,
-        filters=filters,
-        limit=limit
+) -> Output[Dict[str, Any]]:
+    """Query the metadata file with the configured filters."""
+    metadata_file = config.metadata_file or metadata_info.get(
+        "metadata_file", datorcloud.default_metadata_s3_path()
     )
-    
-    # Return with metadata
+    df = datorcloud.query.query_metadata(
+        metadata_file=metadata_file,
+        filters=config.filters or None,
+        limit=config.limit,
+    )
+    payload = {
+        "metadata_file": metadata_file,
+        "result_count": int(len(df)),
+        "filters": config.filters,
+        "results": df.to_dict(orient="records"),
+    }
     return Output(
-        {
-            "result_count": len(results_df),
-            "filters": filters,
-            "results": results_df.to_dict(orient="records")
+        payload,
+        metadata={
+            "result_count": payload["result_count"],
+            "filters_applied": MetadataValue.json(config.filters),
+            "metadata_file": metadata_file,
         },
-        metadata={
-            "result_count": len(results_df),
-            "filters_applied": MetadataValue.json(filters)
-        }
     )
 
 
-@asset(
-    ins={"query_results": AssetIn("query_metadata")}
-)
+@asset(ins={"query_results": AssetIn("query_metadata")})
 def retrieve_objects(
-    components: DatorCloudComponents,
+    config: RetrieveObjectsConfig,
+    datorcloud: DatorCloudResource,
     query_results: Dict[str, Any],
-    dataset: str,
-    metadata_file: Optional[str] = None,
-    max_files: Optional[int] = None,
-    **filters
-) -> List[Dict[str, Any]]:
-    """
-    Retrieve objects based on metadata query.
-    
-    Args:
-        components: DatorCloud components container
-        query_results: Results from metadata query
-        dataset: Dataset name
-        metadata_file: Optional S3 path to metadata file
-        max_files: Maximum number of files to retrieve
-        **filters: Additional filter criteria
-        
-    Returns:
-        List of dictionaries with information about retrieved files
-    """
-    # If metadata_file not provided, use default
-    if metadata_file is None:
-        metadata_file = f"s3://{components.metadata_bucket}/metadata.csv"
-        
-    downloaded_files = components.retrieval_component.retrieve_objects(
+) -> Output[List[Dict[str, Any]]]:
+    """Download the objects matched by the previous query."""
+    metadata_file = (
+        config.metadata_file
+        or query_results.get("metadata_file")
+        or datorcloud.default_metadata_s3_path()
+    )
+    downloaded = datorcloud.retrieval.retrieve_objects(
         metadata_file=metadata_file,
-        dataset=dataset,
-        data_bucket=components.data_bucket,
-        max_files=max_files,
-        **filters
+        dataset=config.dataset,
+        data_bucket=datorcloud.data_bucket,
+        max_files=config.max_files,
+        **config.filters,
     )
-    
-    # Calculate metrics
-    successful = sum(1 for f in downloaded_files if f.get("success", False))
-    
-    # Return with metadata
+    successful = sum(1 for f in downloaded if f.get("success"))
     return Output(
-        downloaded_files,
+        downloaded,
         metadata={
-            "total_files": len(downloaded_files),
+            "total_files": len(downloaded),
             "successful_downloads": successful,
-            "dataset": dataset,
-            "filters": MetadataValue.json(filters)
-        }
+            "dataset": config.dataset,
+            "filters": MetadataValue.json(config.filters),
+        },
     )
 
 
-# Collection of assets for a complete DatorCloud workflow
 component_assets = [
     upload_datasets,
     generate_metadata,
     query_metadata,
-    retrieve_objects
-] 
+    retrieve_objects,
+]
+
+
+# ---------------------------------------------------------------------------
+# Backwards-compatible alias
+# ---------------------------------------------------------------------------
+
+
+class DatorCloudComponents(DatorCloudResource):
+    """Deprecated alias for :class:`DatorCloudResource`.
+
+    Retained for code written against the original component branch.
+    """

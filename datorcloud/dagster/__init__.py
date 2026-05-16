@@ -2,18 +2,28 @@
 
 from .component_assets import (
     DatorCloudComponents,
-    upload_datasets,
+    DatorCloudResource,
+    GenerateMetadataConfig,
+    QueryMetadataConfig,
+    RetrieveObjectsConfig,
+    UploadDatasetsConfig,
+    component_assets,
     generate_metadata,
     query_metadata,
     retrieve_objects,
-    component_assets,
+    upload_datasets,
 )
 
 __all__ = [
     "DatorCloudComponents",
-    "upload_datasets",
-    "generate_metadata",
-    "query_metadata", 
-    "retrieve_objects",
+    "DatorCloudResource",
+    "GenerateMetadataConfig",
+    "QueryMetadataConfig",
+    "RetrieveObjectsConfig",
+    "UploadDatasetsConfig",
     "component_assets",
-] 
+    "generate_metadata",
+    "query_metadata",
+    "retrieve_objects",
+    "upload_datasets",
+]
