@@ -1,12 +1,18 @@
-site_name: ORX-SurgDataHub Docs
-site_description: Documentation for the ORX-SurgDataHub platform
-site_author: Digital Medicine Unit/OR-X Translational Center for Surgery/Balgrist University Hospital
+site_name: DatorCloud Framework Documentation
+site_description: Documentation for the DatorCloud Framework — a lightweight, self-hosted cloud framework for managing, querying, and sharing multimodal research data.
+site_author: Digital Medicine Unit / OR-X Translational Center for Surgery / Balgrist University Hospital
 
-# Make Overview the home page
 nav:
-  - Home: 01_overview/overview.md     # 'Home' will display Overview content
   - Overview: 01_overview/overview.md
   - Installation: 02_installation/installing_core_data_platform.md
+  - Component Architecture: 03_components/architecture.md
+  - User Guide:
+      - Quickstart: 04_user_guide/quickstart.md
+      - Tutorial — 4dor-dataset: 04_user_guide/tutorial_4dor.md
+      - Python API: 04_user_guide/python_api.md
+      - CLI: 04_user_guide/cli.md
+      - Dagster Integration: 04_user_guide/dagster.md
+  - Contributing: 05_contributing/contributing.md
 
 theme:
   name: readthedocs
@@ -26,9 +32,12 @@ markdown_extensions:
 plugins:
   - search
 
+not_in_nav: |
+  README.md
+
 extra:
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/BAL-DMU/orx-surghub
 
-copyright: '&copy; 2024 Balgrist University Hospital'
+copyright: '&copy; 2024-2026 Balgrist University Hospital · OR-X Translational Center for Surgery'

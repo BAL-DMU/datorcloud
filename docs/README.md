@@ -28,8 +28,8 @@ Available themes:
 ### 3. Example `mkdocs.yml`
 
 ```yaml
-site_name: ORX-SurgDataHub Docs
-site_description: Documentation for the ORX-SurgDataHub platform
+site_name: DatorCloud Framework Documentation
+site_description: Documentation for the DatorCloud Framework
 site_author: Digital Medicine Unit/OR-X Translational Center for Surgery/Balgrist University Hospital
 
 nav:

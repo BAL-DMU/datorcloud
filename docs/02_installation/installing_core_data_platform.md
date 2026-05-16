@@ -1,9 +1,12 @@
-# CoreDataPlatform
-Core data stack to store objects and query the data warehouse with MinIO and DuckDB.
+# Installation
 
+This page describes how to deploy the storage layer of the **DatorCloud
+framework** — DuckDB (Database Catalog) and MinIO (Object Store + NoSQL
+Metadata Store) — using Docker Compose. Once the storage layer is running,
+install the Python package with `pip install -e ".[dagster,test]"`
+(see [Quickstart](../04_user_guide/quickstart.md)).
 
-## Installation
-Using Docker to Set Up DuckDB and MinIO Services
+## Storage stack with Docker Compose
 
 ### 1. Launch Docker Compose Services
 To start both DuckDB and MinIO, run:
