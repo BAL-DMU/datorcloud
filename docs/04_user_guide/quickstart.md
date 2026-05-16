@@ -36,14 +36,16 @@ Check the MinIO console at <http://localhost:9091> (default credentials:
 
 ## 4. Run the pipeline
 
-Place a dataset under `./data/<dataset-name>/<experiment>/...`, then:
+All project storage lives under `PROJECT_ROOT` (default `./dataspaces`).
+Place a dataset under `${DATA_LAKE_PATH}/<dataset-name>/<experiment>/...`,
+then:
 
 ```bash
 # 1. Upload the directory tree to MinIO
-datorcloud upload --dataset 4dor-dataset=./data/4dor-dataset
+datorcloud upload --dataset 4dor-dataset=./dataspaces/data_lake/4dor-dataset
 
 # 2. Generate metadata and upload the CSV
-datorcloud metadata --dataset 4dor-dataset=./data/4dor-dataset \
+datorcloud metadata --dataset 4dor-dataset=./dataspaces/data_lake/4dor-dataset \
                     --object-name metadata.csv
 
 # 3. Query the metadata

@@ -28,8 +28,9 @@ pip install -e ".[dagster]"
 dagster dev
 ```
 
-Open <http://localhost:3000>, select **datorcloud_workflow_job**, and
-materialize the assets.
+Open <http://127.0.0.1:3030>, select **datorcloud_workflow_job**, and
+materialize the assets. (The bundled `dagster` container in `docker-compose.yml`
+also runs on port **3030**.)
 
 ## Wire it into your own `Definitions`
 
@@ -41,7 +42,8 @@ resource = DatorCloudResource(
     minio_endpoint="minio:9090",
     data_bucket="orx-datalake",
     metadata_bucket="orx-metadata",
-    local_download_dir="./retrieved_data",
+    local_data_dir="./dataspaces/data_lake",
+    local_download_dir="./dataspaces/retrieved_data",
 )
 
 job = define_asset_job(
@@ -66,13 +68,13 @@ run_config = {
     "ops": {
         "upload_datasets": {
             "config": {
-                "dataset_paths": {"4dor-dataset": "./data/4dor-dataset"},
+                "dataset_paths": {"4dor-dataset": "./dataspaces/data_lake/4dor-dataset"},
             }
         },
         "generate_metadata": {
             "config": {
-                "dataset_dirs": {"4dor-dataset": "./data/4dor-dataset"},
-                "output_file": "./data/metadata.csv",
+                "dataset_dirs": {"4dor-dataset": "./dataspaces/data_lake/4dor-dataset"},
+                "output_file": "./dataspaces/data_lake/metadata.csv",
                 "object_name": "metadata.csv",
             }
         },

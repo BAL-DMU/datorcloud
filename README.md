@@ -50,9 +50,9 @@ minio = MinioObjectComponent(
     secret_key="minioadmin",
 )
 
-# Upload a dataset directory
+# Upload a dataset directory (DATA_LAKE_PATH from .env defaults to ./dataspaces/data_lake)
 minio.upload_directory(
-    local_directory="./data/my-dataset",
+    local_directory="./dataspaces/data_lake/my-dataset",
     bucket_name="orx-datalake",
     prefix="my-dataset",
 )
@@ -63,8 +63,8 @@ storage = MetadataStorageComponent(minio_component=minio, metadata_bucket="orx-m
 
 metadata_df = storage.create_metadata_and_store(
     metadata_generator_component=generator,
-    dataset_dirs={"my-dataset": "./data/my-dataset"},
-    local_file_path="./data/metadata.csv",
+    dataset_dirs={"my-dataset": "./dataspaces/data_lake/my-dataset"},
+    local_file_path="./dataspaces/data_lake/metadata.csv",
     object_name="metadata.csv",
 )
 ```
@@ -80,10 +80,10 @@ orchestrator = DatorCloudOrchestrator(
     metadata_bucket="orx-metadata",
 )
 
-orchestrator.upload_datasets({"my-dataset": "./data/my-dataset"})
+orchestrator.upload_datasets({"my-dataset": "./dataspaces/data_lake/my-dataset"})
 orchestrator.generate_and_upload_metadata(
-    dataset_dirs={"my-dataset": "./data/my-dataset"},
-    output_file="./data/metadata.csv",
+    dataset_dirs={"my-dataset": "./dataspaces/data_lake/my-dataset"},
+    output_file="./dataspaces/data_lake/metadata.csv",
     object_name="metadata.csv",
 )
 
@@ -105,7 +105,8 @@ resource = DatorCloudResource(
     minio_endpoint="minio:9090",
     data_bucket="orx-datalake",
     metadata_bucket="orx-metadata",
-    local_download_dir="./retrieved_data",
+    local_data_dir="./dataspaces/data_lake",
+    local_download_dir="./dataspaces/retrieved_data",
 )
 
 datorcloud_job = define_asset_job(

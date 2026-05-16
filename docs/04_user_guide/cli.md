@@ -17,7 +17,7 @@ Every subcommand accepts:
 | `--minio-secure`              | off                                    | Use HTTPS for MinIO.                     |
 | `--data-bucket`               | `orx-datalake`                         | Bucket used for raw data.                |
 | `--metadata-bucket`           | `orx-metadata`                         | Bucket used for the metadata CSV.        |
-| `--local-download-dir`        | `./retrieved_data`                     | Where `retrieve` writes files.           |
+| `--local-download-dir`        | `$RETRIEVED_DATA_PATH` or `./retrieved_data` | Where `retrieve` writes files.       |
 | `--duckdb-extension-path`     | _auto_                                 | Explicit `httpfs.duckdb_extension` path. |
 | `-v / -vv`                    | warnings                               | Increase log verbosity.                  |
 
@@ -28,8 +28,8 @@ Every subcommand accepts:
 Upload one or more dataset directories to MinIO.
 
 ```bash
-datorcloud upload --dataset 4dor-dataset=./data/4dor-dataset \
-                  --dataset orx-experiments=./data/orx-experiments
+datorcloud upload --dataset 4dor-dataset=./dataspaces/data_lake/4dor-dataset \
+                  --dataset orx-experiments=./dataspaces/data_lake/orx-experiments
 ```
 
 `--dataset` may be repeated. The output is a JSON map of `{dataset: file_count}`.
@@ -39,10 +39,14 @@ datorcloud upload --dataset 4dor-dataset=./data/4dor-dataset \
 Generate metadata for the configured datasets and upload the resulting CSV.
 
 ```bash
-datorcloud metadata --dataset 4dor-dataset=./data/4dor-dataset \
-                    --output-file ./data/metadata.csv \
+datorcloud metadata --dataset 4dor-dataset=./dataspaces/data_lake/4dor-dataset \
+                    --output-file ./dataspaces/data_lake/metadata.csv \
                     --object-name metadata.csv
 ```
+
+The default `--output-file` is `${DATA_LAKE_PATH}/metadata.csv` when
+`DATA_LAKE_PATH` is set in the environment (or `./data_lake/metadata.csv`
+otherwise).
 
 ### `datorcloud query`
 
@@ -78,11 +82,17 @@ datorcloud version
 
 ## Running inside Docker
 
-The `python-runner` and `datorcloud-cli` services in `docker-compose.yml` already
-have the package installed and inherit the `S3_*` environment variables, so you
-can use the CLI directly:
+The `python-runner` and `datorcloud-cli` services in `docker-compose.yml`
+already have the package installed and inherit the `S3_*`, `DATA_LAKE_PATH`,
+and `RETRIEVED_DATA_PATH` environment variables. Inside both containers the
+dataset lake is mounted at `/app/data_lake`:
 
 ```bash
-docker exec -it datorcloud-cli datorcloud upload \
-    --dataset 4dor-dataset=/app/data/4dor-dataset
+docker exec -it datorcloud-cli python -m datorcloud.cli upload \
+    --dataset 4dor-dataset=/app/data_lake/4dor-dataset
 ```
+
+!!! note
+    The current `datorcloud-cli` image does not yet register the short
+    `datorcloud` console script on `PATH`. Use `python -m datorcloud.cli ...`
+    until the image is rebuilt.

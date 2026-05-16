@@ -7,7 +7,13 @@ own workflow).
 ## Orchestrator
 
 ```python
+import os
+from dotenv import load_dotenv
 from datorcloud.core import DatorCloudOrchestrator
+
+load_dotenv()  # populate DATA_LAKE_PATH, S3_*, RETRIEVED_DATA_PATH from .env
+
+DATA_LAKE = os.environ.get("DATA_LAKE_PATH", "./data_lake")
 
 orch = DatorCloudOrchestrator(
     minio_endpoint="minio:9090",
@@ -15,11 +21,11 @@ orch = DatorCloudOrchestrator(
     metadata_bucket="orx-metadata",
 )
 
-orch.upload_datasets({"4dor-dataset": "./data/4dor-dataset"})
+orch.upload_datasets({"4dor-dataset": f"{DATA_LAKE}/4dor-dataset"})
 
 orch.generate_and_upload_metadata(
-    dataset_dirs={"4dor-dataset": "./data/4dor-dataset"},
-    output_file="./data/metadata.csv",
+    dataset_dirs={"4dor-dataset": f"{DATA_LAKE}/4dor-dataset"},
+    output_file=f"{DATA_LAKE}/metadata.csv",
     object_name="metadata.csv",
 )
 
@@ -54,14 +60,14 @@ from datorcloud import (
 )
 
 minio = MinioObjectComponent(endpoint="minio:9090")
-minio.upload_directory("./data/4dor-dataset", "orx-datalake", prefix="4dor-dataset")
+minio.upload_directory(f"{DATA_LAKE}/4dor-dataset", "orx-datalake", prefix="4dor-dataset")
 
 generator = MetadataGeneratorComponent()
 storage = MetadataStorageComponent(minio_component=minio, metadata_bucket="orx-metadata")
 df = storage.create_metadata_and_store(
     metadata_generator_component=generator,
-    dataset_dirs={"4dor-dataset": "./data/4dor-dataset"},
-    local_file_path="./data/metadata.csv",
+    dataset_dirs={"4dor-dataset": f"{DATA_LAKE}/4dor-dataset"},
+    local_file_path=f"{DATA_LAKE}/metadata.csv",
     object_name="metadata.csv",
 )
 

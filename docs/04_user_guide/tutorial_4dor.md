@@ -41,8 +41,23 @@ You will:
 | :--------------------------- | :-------------------------------------------------------------------- |
 | Docker Desktop + Docker Compose v2 | The whole stack runs in containers; nothing must be installed on the host. |
 | `git`                        | To clone the repository.                                              |
-| `4dor-dataset` on disk       | The default location is `${DATALAKE_PATH}/4dor-dataset`, where `DATALAKE_PATH` is set in `.env`. |
+| `4dor-dataset` on disk       | Placed under `${DATA_LAKE_PATH}/4dor-dataset` (default: `./dataspaces/data_lake/4dor-dataset`). |
 | Free local ports             | **9090** (MinIO API), **9091** (MinIO Console), **3030** (Dagster), **5825** (DuckDB). |
+
+### Storage layout
+
+All project storage lives under a single host directory defined by
+`PROJECT_ROOT` in `.env` (default `./dataspaces`):
+
+```
+${PROJECT_ROOT}/
+├── data_lake/        ← raw datasets you want to ingest  (mount → /app/data_lake)
+├── data_warehouse/   ← MinIO's bucket-backing storage   (mount → /data inside minio)
+└── retrieved_data/   ← download target for `retrieve`   (mount → /app/retrieved_data)
+```
+
+Override individual paths by setting `DATA_LAKE_PATH`, `DATA_WAREHOUSE_PATH`,
+or `RETRIEVED_DATA_PATH` in `.env`.
 
 ---
 
@@ -82,7 +97,7 @@ host$ curl -I http://127.0.0.1:9091
 host$ curl -I http://127.0.0.1:9090
 
 # Dataset is mounted inside the CLI container
-host$ docker exec datorcloud-cli ls /app/data/4dor-dataset
+host$ docker exec datorcloud-cli ls /app/data_lake/4dor-dataset
 # experiment-1
 # experiment-2
 
@@ -110,11 +125,11 @@ with the credentials defined in `.env` (defaults: `minioadmin` / `minioadmin`).
 ### Option A — CLI (inside the `datorcloud-cli` container)
 
 The CLI ships in the **`datorcloud-cli`** image (`jagh1729/datorcloud-cli:latest`).
-Inside the container the dataset lives at `/app/data/4dor-dataset`:
+Inside the container the dataset lives at `/app/data_lake/4dor-dataset`:
 
 ```bash
 host$ docker exec -it datorcloud-cli python -m datorcloud.cli upload \
-        --dataset 4dor-dataset=/app/data/4dor-dataset \
+        --dataset 4dor-dataset=/app/data_lake/4dor-dataset \
         --minio-endpoint minio:9090 \
         -v
 ```
@@ -150,7 +165,7 @@ minio = MinioObjectComponent(
 minio.ensure_bucket_exists("orx-datalake")
 
 results = minio.upload_directory(
-    local_directory="/app/data/4dor-dataset",
+    local_directory="/app/data_lake/4dor-dataset",
     bucket_name="orx-datalake",
     prefix="4dor-dataset",
 )
@@ -158,7 +173,7 @@ print(f"{sum(r['status'] == 'success' for r in results)} files uploaded")
 ```
 
 If you prefer to run Python on your **host** (after `pip install -e ".[dagster,test]"`),
-use `endpoint="localhost:9090"` and `local_directory="./data/4dor-dataset"`.
+use `endpoint="localhost:9090"` and `local_directory="./dataspaces/data_lake/4dor-dataset"`.
 
 ### Verify the upload in MinIO
 
@@ -182,8 +197,8 @@ auto-extracted fields: `dataset`, `experiment`, `subfolder`, `file_name`,
 
 ```bash
 host$ docker exec -it datorcloud-cli python -m datorcloud.cli metadata \
-        --dataset 4dor-dataset=/app/data/4dor-dataset \
-        --output-file /app/data/metadata_4dor.csv \
+        --dataset 4dor-dataset=/app/data_lake/4dor-dataset \
+        --output-file /app/data_lake/metadata_4dor.csv \
         --object-name metadata_4dor.csv \
         --minio-endpoint minio:9090 \
         -v
@@ -194,7 +209,7 @@ Expected output:
 ```json
 {
   "records": 48,
-  "output_file": "/app/data/metadata_4dor.csv"
+  "output_file": "/app/data_lake/metadata_4dor.csv"
 }
 ```
 
@@ -214,8 +229,8 @@ storage = MetadataStorageComponent(
 
 metadata_df = storage.create_metadata_and_store(
     metadata_generator_component=generator,
-    dataset_dirs={"4dor-dataset": "/app/data/4dor-dataset"},
-    local_file_path="/app/data/metadata_4dor.csv",
+    dataset_dirs={"4dor-dataset": "/app/data_lake/4dor-dataset"},
+    local_file_path="/app/data_lake/metadata_4dor.csv",
     object_name="metadata_4dor.csv",
 )
 
@@ -355,11 +370,11 @@ orch = DatorCloudOrchestrator(
     metadata_bucket="orx-metadata",
 )
 
-orch.upload_datasets({"4dor-dataset": "/app/data/4dor-dataset"})
+orch.upload_datasets({"4dor-dataset": "/app/data_lake/4dor-dataset"})
 
 orch.generate_and_upload_metadata(
-    dataset_dirs={"4dor-dataset": "/app/data/4dor-dataset"},
-    output_file="/app/data/metadata_4dor.csv",
+    dataset_dirs={"4dor-dataset": "/app/data_lake/4dor-dataset"},
+    output_file="/app/data_lake/metadata_4dor.csv",
     object_name="metadata_4dor.csv",
 )
 
@@ -399,12 +414,12 @@ ops:
   upload_datasets:
     config:
       dataset_paths:
-        4dor-dataset: /app/data/4dor-dataset
+        4dor-dataset: /app/data_lake/4dor-dataset
   generate_metadata:
     config:
       dataset_dirs:
-        4dor-dataset: /app/data/4dor-dataset
-      output_file: /app/data/metadata_4dor.csv
+        4dor-dataset: /app/data_lake/4dor-dataset
+      output_file: /app/data_lake/metadata_4dor.csv
       object_name: metadata_4dor.csv
   query_metadata:
     config:
