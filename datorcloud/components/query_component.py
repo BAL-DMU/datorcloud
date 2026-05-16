@@ -21,34 +21,64 @@ class QueryComponent:
     """
 
     DEFAULT_EXTENSION_ENV = "DUCKDB_HTTPFS_EXTENSION_PATH"
+    DEFAULT_REGION = "us-east-1"
+    DEFAULT_ENDPOINT = "minio:9090"
 
     def __init__(
         self,
-        s3_region: str = "us-east-1",
-        s3_endpoint: str = "minio:9090",
-        s3_access_key: str = "minioadmin",
-        s3_secret_key: str = "minioadmin",
+        s3_region: Optional[str] = None,
+        s3_endpoint: Optional[str] = None,
+        s3_access_key: Optional[str] = None,
+        s3_secret_key: Optional[str] = None,
         s3_use_ssl: bool = False,
         duckdb_extension_path: Optional[str] = None,
         connection: Optional["duckdb.DuckDBPyConnection"] = None,
     ) -> None:
         """Initialize the DuckDB query component.
 
+        When ``connection`` is provided it is used as-is; the caller is
+        responsible for any ``httpfs`` / S3 configuration. This path is
+        typically used by tests querying local CSVs.
+
+        Otherwise a fresh in-memory DuckDB connection is opened, ``httpfs`` is
+        loaded, and the S3 settings are applied — which requires credentials.
+
         Args:
-            s3_region: The S3 region.
-            s3_endpoint: MinIO server endpoint.
-            s3_access_key: MinIO access key.
-            s3_secret_key: MinIO secret key.
+            s3_region: The S3 region. Defaults to ``us-east-1``.
+            s3_endpoint: MinIO server endpoint. Defaults to ``minio:9090``.
+            s3_access_key: MinIO access key. **Required** when ``connection`` is None.
+            s3_secret_key: MinIO secret key. **Required** when ``connection`` is None.
             s3_use_ssl: Whether to use SSL for S3 connections.
             duckdb_extension_path: Optional explicit path to ``httpfs.duckdb_extension``.
                 Falls back to the ``DUCKDB_HTTPFS_EXTENSION_PATH`` env var, then to
                 DuckDB's default extension resolution.
             connection: Optional pre-built DuckDB connection. Mainly for tests.
+
+        Raises:
+            ValueError: When ``connection`` is None and credentials are missing.
         """
-        self.conn = connection if connection is not None else duckdb.connect(":memory:")
+        if connection is not None:
+            self.conn = connection
+            return
+
+        self.conn = duckdb.connect(":memory:")
         self._configure_httpfs(duckdb_extension_path)
+
+        if not s3_access_key or not s3_secret_key:
+            raise ValueError(
+                "S3 credentials are required when QueryComponent builds its "
+                "own DuckDB connection. Pass `s3_access_key`/`s3_secret_key` "
+                "or inject a pre-configured `connection` (tests typically do "
+                "the latter). Production callers should configure S3_ACCESS_KEY "
+                "and S3_SECRET_KEY in their .env."
+            )
+
         self._configure_s3(
-            s3_region, s3_endpoint, s3_access_key, s3_secret_key, s3_use_ssl
+            s3_region or self.DEFAULT_REGION,
+            s3_endpoint or self.DEFAULT_ENDPOINT,
+            s3_access_key,
+            s3_secret_key,
+            s3_use_ssl,
         )
 
     def _configure_httpfs(self, explicit_path: Optional[str]) -> None:

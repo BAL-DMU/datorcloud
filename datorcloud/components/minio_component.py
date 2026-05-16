@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from minio import Minio
 from minio.error import S3Error
 
 log = logging.getLogger(__name__)
+
+DEFAULT_ENDPOINT = "minio:9090"
 
 
 class MinioObjectComponent:
@@ -17,30 +19,49 @@ class MinioObjectComponent:
 
     def __init__(
         self,
-        endpoint: str = "minio:9090",
-        access_key: str = "minioadmin",
-        secret_key: str = "minioadmin",
+        endpoint: Optional[str] = None,
+        access_key: Optional[str] = None,
+        secret_key: Optional[str] = None,
         secure: bool = False,
-        client: "Minio | None" = None,
+        client: Optional["Minio"] = None,
     ) -> None:
         """Initialize MinIO client connection.
 
+        Credentials are intentionally **not** defaulted. They must come from
+        an injected ``client`` (typical for tests), explicit arguments, or
+        the project's ``.env`` (loaded by the CLI / examples / Dagster
+        resource that wraps this component).
+
         Args:
-            endpoint: MinIO server endpoint.
-            access_key: MinIO access key.
-            secret_key: MinIO secret key.
+            endpoint: MinIO server endpoint (host:port, no scheme).
+                Defaults to ``minio:9090`` when not provided.
+            access_key: MinIO access key. **Required** when ``client`` is None.
+            secret_key: MinIO secret key. **Required** when ``client`` is None.
             secure: Whether to use HTTPS.
-            client: Optional pre-built MinIO client. Useful for tests.
+            client: Optional pre-built MinIO client. When provided the other
+                arguments are ignored. Useful for tests.
+
+        Raises:
+            ValueError: When ``client`` is None and credentials are missing.
         """
         if client is not None:
             self.client = client
-        else:
-            self.client = Minio(
-                endpoint=endpoint,
-                access_key=access_key,
-                secret_key=secret_key,
-                secure=secure,
+            return
+
+        if not access_key or not secret_key:
+            raise ValueError(
+                "MinIO credentials are required. Pass `access_key` and "
+                "`secret_key` explicitly, inject a pre-built `client`, or "
+                "set S3_ACCESS_KEY / S3_SECRET_KEY in your .env and build "
+                "the orchestrator with DatorCloudOrchestrator.from_env()."
             )
+
+        self.client = Minio(
+            endpoint=endpoint or DEFAULT_ENDPOINT,
+            access_key=access_key,
+            secret_key=secret_key,
+            secure=secure,
+        )
 
     def ensure_bucket_exists(self, bucket_name: str) -> bool:
         """Create a bucket if it doesn't exist.
