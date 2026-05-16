@@ -78,10 +78,8 @@ RUN python -c "import duckdb; print(f'DuckDB version: {duckdb.__version__}')" \
 WORKDIR /app
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
-COPY src/ /app/src/
-
-RUN if [ -f /app/src/orx-surghub/minio.py ]; then \
-    mv /app/src/orx-surghub/minio.py /app/src/orx-surghub/minio_local.py; \
-    fi
+COPY datorcloud/ /app/datorcloud/
+COPY pyproject.toml setup.py /app/
+RUN pip install --no-cache-dir -e .
 
 CMD ["python", "--version"]

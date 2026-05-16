@@ -82,9 +82,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . /app/
 RUN cd /app && pip install -e .
 
-# Make sure we don't overwrite any minio module
-RUN if [ -f /app/src/orx-surghub/minio.py ]; then \
-    mv /app/src/orx-surghub/minio.py /app/src/orx-surghub/minio_local.py; \
-    fi
-
 CMD ["python", "--version"]
