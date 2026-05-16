@@ -34,6 +34,12 @@ def _env_path(name: str, default: str) -> str:
     return value if value else default
 
 
+def _env_endpoint() -> str:
+    """Return ``S3_ENDPOINT`` stripped of any scheme prefix."""
+    raw = os.environ.get("S3_ENDPOINT", "minio:9090")
+    return raw.replace("http://", "").replace("https://", "")
+
+
 def _parse_kv_pairs(values: Optional[Sequence[str]]) -> Dict[str, str]:
     """Turn ``["a=b", "c=d"]`` into ``{"a": "b", "c": "d"}``."""
     out: Dict[str, str] = {}
@@ -60,6 +66,18 @@ def _parse_filters(values: Optional[Sequence[str]]) -> Dict[str, Any]:
 
 
 def _build_orchestrator(args: argparse.Namespace) -> DatorCloudOrchestrator:
+    """Construct the orchestrator from CLI args.
+
+    CLI defaults pull from the environment (which has been populated by
+    ``load_dotenv()`` above) without hard-coding any credentials. Missing
+    credentials surface as a clear ``ValueError`` from the underlying
+    components.
+    """
+    if not args.minio_access_key or not args.minio_secret_key:
+        raise SystemExit(
+            "MinIO credentials are missing. Set S3_ACCESS_KEY and S3_SECRET_KEY "
+            "in your .env file, or pass --minio-access-key / --minio-secret-key."
+        )
     return DatorCloudOrchestrator(
         minio_endpoint=args.minio_endpoint,
         minio_access_key=args.minio_access_key,
@@ -75,18 +93,36 @@ def _build_orchestrator(args: argparse.Namespace) -> DatorCloudOrchestrator:
 def _add_common_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--minio-endpoint",
-        default=os.environ.get("S3_ENDPOINT", "minio:9090").replace("http://", "").replace("https://", ""),
+        default=_env_endpoint(),
+        help="MinIO host:port. Defaults to $S3_ENDPOINT (no scheme).",
     )
-    parser.add_argument("--minio-access-key", default=os.environ.get("S3_ACCESS_KEY", "minioadmin"))
-    parser.add_argument("--minio-secret-key", default=os.environ.get("S3_SECRET_KEY", "minioadmin"))
+    parser.add_argument(
+        "--minio-access-key",
+        default=os.environ.get("S3_ACCESS_KEY"),
+        help="MinIO access key. Defaults to $S3_ACCESS_KEY (required).",
+    )
+    parser.add_argument(
+        "--minio-secret-key",
+        default=os.environ.get("S3_SECRET_KEY"),
+        help="MinIO secret key. Defaults to $S3_SECRET_KEY (required).",
+    )
     parser.add_argument("--minio-secure", action="store_true")
-    parser.add_argument("--data-bucket", default="orx-datalake")
-    parser.add_argument("--metadata-bucket", default="orx-metadata")
+    parser.add_argument(
+        "--data-bucket",
+        default=os.environ.get("DATA_BUCKET", "orx-datalake"),
+    )
+    parser.add_argument(
+        "--metadata-bucket",
+        default=os.environ.get("METADATA_BUCKET", "orx-metadata"),
+    )
     parser.add_argument(
         "--local-download-dir",
         default=_env_path("RETRIEVED_DATA_PATH", "./retrieved_data"),
     )
-    parser.add_argument("--duckdb-extension-path", default=None)
+    parser.add_argument(
+        "--duckdb-extension-path",
+        default=os.environ.get("DUCKDB_HTTPFS_EXTENSION_PATH"),
+    )
     parser.add_argument(
         "-v", "--verbose", action="count", default=0, help="Increase log verbosity."
     )
