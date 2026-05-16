@@ -4,10 +4,22 @@ data/metadata_orx-datahub.csv
 retrieved_data/
 
 ## DatorCloud
-datorcloud/__pycache__/*
-datorcloud/dagster/__pycache__/*
-datorcloud/components/__pycache__/*
-datorcloud/core/__pycache__/*
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+build/datorcloud-cli/*.tar
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.venv/
+venv/
+
+## MkDocs site
+site/
+_site_check/
 
 ## DuckDB files
 *.db

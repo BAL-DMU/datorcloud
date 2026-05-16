@@ -1,0 +1,77 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "datorcloud"
+version = "0.1.0"
+description = "Modular, component-oriented framework for managing multimodal research data with MinIO and DuckDB."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+    { name = "DatorCloud contributors" },
+]
+requires-python = ">=3.10"
+keywords = ["minio", "duckdb", "dagster", "data-management", "research"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+]
+dependencies = [
+    "minio>=7.1.15",
+    "duckdb>=1.2.0",
+    "pandas>=1.5.3",
+]
+
+[project.optional-dependencies]
+dagster = [
+    "dagster>=1.4.0",
+    "dagster-webserver>=1.4.0",
+]
+test = [
+    "pytest>=7.3.1",
+    "pytest-cov>=4.1.0",
+]
+docs = [
+    "mkdocs==1.5.2",
+    "mkdocs-material==9.1.1",
+    "plantuml-markdown==3.7.0",
+    "pymdown-extensions==10.0",
+]
+dev = [
+    "datorcloud[dagster,test,docs]",
+    "ruff>=0.5.0",
+]
+
+[project.scripts]
+datorcloud = "datorcloud.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/jagh/datorcloud"
+Issues = "https://github.com/jagh/datorcloud/issues"
+
+[tool.setuptools.packages.find]
+include = ["datorcloud*"]
+exclude = ["tests*", "examples*", "build*", "docs*", "src*"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+addopts = "-ra"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]

@@ -1,20 +1,22 @@
-# Core dependencies for the collector and data ingestion client service
-#duckdb==0.8.1
-minio>=7.1.15
-duckdb>=1.2.0 # 0.8.1
-pandas>=1.5.3
-pytest>=7.3.1
-dagster>=1.4.0
+# Authoritative dependencies live in pyproject.toml. This file is kept for
+# legacy tooling (docker-compose, notebooks) that still expects requirements.txt.
+# Install the package directly with `pip install -e .[dagster,test]` whenever
+# possible.
 
-# Documentation dependencies
+minio>=7.1.15
+duckdb>=1.2.0
+pandas>=1.5.3
+
+# Dagster integration (optional, install with pip install -e .[dagster])
+dagster>=1.4.0
+dagster-webserver>=1.4.0
+
+# Tests
+pytest>=7.3.1
+pytest-cov>=4.1.0
+
+# Documentation
 mkdocs==1.5.2
 mkdocs-material==9.1.1
 plantuml-markdown==3.7.0
 pymdown-extensions==10.0
-
-# Debug the MinIO File Access
-boto3==1.18.63
-
-# Dagster dependencies
-dagster-webserver==1.4.0
-pendulum==2.1.2

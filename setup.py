@@ -1,13 +1,8 @@
-from setuptools import setup, find_packages
+"""Thin shim kept for ``pip install -e .`` compatibility.
 
-setup(
-    name="datorcloud",
-    version="0.1.0",
-    packages=find_packages(),
-    install_requires=[
-        "minio>=7.1.15",
-        "duckdb>=1.2.0",
-        "pandas>=1.5.3",
-        "dagster>=1.4.0"
-    ],
-)
+All project metadata lives in :file:`pyproject.toml`.
+"""
+
+from setuptools import setup
+
+setup()
