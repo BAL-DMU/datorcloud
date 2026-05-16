@@ -51,7 +51,7 @@ try:
     query = f"""
         SELECT 
             experiment,
-            's3://orx-data-lake/' || file_path AS full_path,
+            's3://orx-datalake/' || file_path AS full_path,
             subfolder
         FROM read_csv_auto('{metadata_file}')
         WHERE dataset = '{dataset_name}' 
