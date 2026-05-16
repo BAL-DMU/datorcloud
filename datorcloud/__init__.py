@@ -1,32 +1,22 @@
-"""DatorCloud - A framework for managing and retrieving data in the cloud."""
+"""DatorCloud - A framework for managing and retrieving multimodal research data."""
 
 from .components import (
-    MinioObjectComponent,
     MetadataGeneratorComponent,
     MetadataStorageComponent,
-    QueryComponent,
+    MinioObjectComponent,
     ObjectRetrievalComponent,
+    QueryComponent,
 )
+from .core import DatorCloudOrchestrator
 
-from .dagster import (
-    DatorCloudComponents,
-    upload_datasets,
-    generate_metadata,
-    query_metadata,
-    retrieve_objects,
-    component_assets,
-)
+__version__ = "0.1.0"
 
 __all__ = [
-    "MinioObjectComponent",
+    "DatorCloudOrchestrator",
     "MetadataGeneratorComponent",
     "MetadataStorageComponent",
-    "QueryComponent",
+    "MinioObjectComponent",
     "ObjectRetrievalComponent",
-    "DatorCloudComponents",
-    "upload_datasets",
-    "generate_metadata",
-    "query_metadata",
-    "retrieve_objects",
-    "component_assets",
-] 
+    "QueryComponent",
+    "__version__",
+]

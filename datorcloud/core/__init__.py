@@ -1,4 +1,5 @@
-from .datorcloud import DatorCloud
+"""Core coordination layer for DatorCloud."""
+
 from .datorcloud_orchestrator import DatorCloudOrchestrator
 
-__all__ = ["DatorCloud", "DatorCloudOrchestrator"] 
+__all__ = ["DatorCloudOrchestrator"]
