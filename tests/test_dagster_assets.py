@@ -33,7 +33,10 @@ def patched_minio_class(monkeypatch, fake_minio):
 
 def test_resource_builds_components(patched_minio_class):
     resource = DatorCloudResource(
-        minio_endpoint="minio:9090", data_bucket="orx-datalake"
+        minio_endpoint="minio:9090",
+        minio_access_key="test",
+        minio_secret_key="test",
+        data_bucket="orx-datalake",
     )
     assert resource.minio.client is patched_minio_class
     assert resource.metadata_generator is not None
@@ -50,7 +53,11 @@ def test_component_assets_are_dagster_assets():
 def test_upload_datasets_materializes(patched_minio_class, synthetic_dataset, tmp_path):
     from dagster import materialize
 
-    resource = DatorCloudResource(data_bucket="orx-datalake")
+    resource = DatorCloudResource(
+        minio_access_key="test",
+        minio_secret_key="test",
+        data_bucket="orx-datalake",
+    )
 
     result = materialize(
         [upload_datasets],
