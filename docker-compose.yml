@@ -1,32 +1,24 @@
 ##############################################################
 ## Docker Compose File for DuckDB, MinIO, and Dagster Services
-
-## This compose docker must to pre-load the docker images for DuckDB, MinIO, and Dagster services.
-## The images are available in the local repository docker folder: duckdb_image.tar, minio_image.tar, and dagster_image.tar
-## To load the images, use the following commands:
-## docker load -i docker/duckdb_image.tar
-## docker load -i docker/minio_image.tar
-## docker load -i docker/python_image.tar
-## docker load -i docker/dagster_image.tar
-
-## To run the docker compose, use the following command:
-## docker-compose up -d
-
-## If you do want to connect to DuckDB later, you can do:
-## docker exec -it duckdb bash or docker exec -it duckdb duckdb
-
-## If you do want to connect to MinIO later, you can do:
-## docker exec -it minio bash or docker exec -it minio mc
-
-## If you do want to connect to Dagster later, you can do:
-## docker exec -it dagster bash
-
-## If you do want to connect to DatorCloud-CLI or Python Runner later, you can do:
-## docker exec -it datorcloud-cli bash
-## docker exec -it python-runner bash
-
-## To stop the services, use the following command:
-## docker-compose down
+##
+## MinIO and DuckDB pull directly from upstream registries; the dagster,
+## datorcloud-cli, and python-runner images come from Docker Hub
+## (jagh1729/*). For air-gapped installs you can still preload local
+## tarballs via `docker load -i docker/<image>.tar`.
+##
+## To start the stack:
+##   docker compose up -d
+##
+## To connect to the services:
+##   DuckDB         docker exec -it duckdb duckdb
+##                  (distroless image — no shell available)
+##   MinIO          docker exec -it minio mc
+##   Dagster        docker exec -it dagster bash
+##   DatorCloud CLI docker exec -it datorcloud-cli bash
+##   Python runner  docker exec -it python-runner bash
+##
+## To stop:
+##   docker compose down
 ##############################################################
 
 
@@ -35,12 +27,10 @@ services:
   # DuckDB Service
   # -----------------------------------------------------
   duckdb:
-    image: jagh1729/duckdb:v1.2.1
+    image: duckdb/duckdb:latest
     container_name: duckdb
     volumes:
       - .:/orx-surgdatahub
-    ports:
-      - "${DUCKDB_PORT}:5825"
     stdin_open: true
     tty: true
     environment:

@@ -42,7 +42,7 @@ You will:
 | Docker Desktop + Docker Compose v2 | The whole stack runs in containers; nothing must be installed on the host. |
 | `git`                        | To clone the repository.                                              |
 | `4dor-dataset` on disk       | Placed under `${DATA_LAKE_PATH}/4dor-dataset` (default: `./dataspaces/data_lake/4dor-dataset`). |
-| Free local ports             | **9090** (MinIO API), **9091** (MinIO Console), **3030** (Dagster), **5825** (DuckDB). |
+| Free local ports             | **9090** (MinIO API), **9091** (MinIO Console), **3030** (Dagster). DuckDB runs as a CLI inside its container and does not expose a port. |
 
 ### Storage layout
 
@@ -82,7 +82,7 @@ Expected output (abridged):
 NAME             SERVICE          STATUS    PORTS
 dagster          dagster          Up        0.0.0.0:3030->3030/tcp
 datorcloud-cli   datorcloud-cli   Up
-duckdb           duckdb           Up        0.0.0.0:5825->5825/tcp
+duckdb           duckdb           Up
 minio            minio            Up        0.0.0.0:9090-9091->9090-9091/tcp
 python-runner    python-runner    Up
 ```
