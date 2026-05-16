@@ -1,5 +1,0 @@
-[
-    { "id": 1, "name": "Experiment A", "date": "2024-01-10", "size": "500MB", "type": "Image" },
-    { "id": 2, "name": "Experiment B", "date": "2024-02-15", "size": "1.2GB", "type": "Tabular" },
-    { "id": 3, "name": "Experiment C", "date": "2024-03-05", "size": "750MB", "type": "Time-series" }
-]
