@@ -17,6 +17,7 @@ resolution.
 """
 
 import logging
+import os
 from typing import Any, Dict, List, Optional
 
 from dagster import (
@@ -38,30 +39,55 @@ from ..components.retrieval_component import ObjectRetrievalComponent
 log = logging.getLogger(__name__)
 
 
+def _env_endpoint() -> str:
+    raw = os.environ.get("S3_ENDPOINT", "minio:9090")
+    return raw.replace("http://", "").replace("https://", "")
+
+
+def _env_bool(name: str, default: bool = False) -> bool:
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
 class DatorCloudResource(ConfigurableResource):
     """Dagster resource that exposes the DatorCloud components.
 
     Configuration values mirror :class:`datorcloud.core.DatorCloudOrchestrator`.
+    Every field defaults to its matching environment variable so the resource
+    works out of the box when the project ``.env`` is loaded; callers may still
+    override any value in code or via Dagster ``run_config``.
 
     ``ConfigurableResource`` instances are Pydantic models that Dagster may
     rebuild between contexts. Storing component instances directly on ``self``
     therefore does not survive a materialization. We instead build components
-    on every access (they are cheap to construct) and expose a
-    :meth:`build_orchestrator` helper that callers can use when they want a
-    single object holding all of them.
+    on every access (they are cheap to construct).
     """
 
-    minio_endpoint: str = "minio:9090"
-    minio_access_key: str = "minioadmin"
-    minio_secret_key: str = "minioadmin"
-    minio_secure: bool = False
-    s3_region: str = "us-east-1"
+    minio_endpoint: str = Field(default_factory=_env_endpoint)
+    minio_access_key: str = Field(
+        default_factory=lambda: os.environ.get("S3_ACCESS_KEY", "")
+    )
+    minio_secret_key: str = Field(
+        default_factory=lambda: os.environ.get("S3_SECRET_KEY", "")
+    )
+    minio_secure: bool = Field(default_factory=lambda: _env_bool("S3_USE_SSL", False))
+    s3_region: str = Field(
+        default_factory=lambda: os.environ.get("S3_REGION", "us-east-1")
+    )
     data_bucket: str = "orx-datalake"
     metadata_bucket: str = "orx-metadata"
-    local_data_dir: str = "./data_lake"
-    local_download_dir: str = "./retrieved_data"
+    local_data_dir: str = Field(
+        default_factory=lambda: os.environ.get("DATA_LAKE_PATH", "./data_lake")
+    )
+    local_download_dir: str = Field(
+        default_factory=lambda: os.environ.get(
+            "RETRIEVED_DATA_PATH", "./retrieved_data"
+        )
+    )
     duckdb_extension_path: Optional[str] = Field(
-        default=None,
+        default_factory=lambda: os.environ.get("DUCKDB_HTTPFS_EXTENSION_PATH"),
         description="Optional explicit path to the DuckDB httpfs extension.",
     )
 
