@@ -4,10 +4,10 @@ Job definitions for data processing.
 from dagster import define_asset_job, AssetSelection
 
 # Import the assets from the components
-from src.dagster_quickstart.components.data_processing import (
+from examples.dagster_quickstart.components.data_processing import (
     raw_data,
     processed_data,
-    data_summary
+    data_summary,
 )
 
 # Define a job that processes all data assets

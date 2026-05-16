@@ -1,95 +1,110 @@
 #!/usr/bin/env python
-"""
-Basic example of using DatorCloud Components to:
+"""Basic example of using DatorCloud components to:
+
 1. Upload datasets to MinIO
-2. Generate metadata
-3. Query metadata 
-4. Retrieve data based on query
+2. Generate and store metadata
+3. Query metadata
+4. Retrieve data based on the query
 """
 
+import logging
 import os
+
 from datorcloud import (
-    MinioObjectComponent,
     MetadataGeneratorComponent,
-    MetadataQueryComponent,
-    ObjectRetrievalComponent
+    MetadataStorageComponent,
+    MinioObjectComponent,
+    ObjectRetrievalComponent,
+    QueryComponent,
 )
 
-# Initialize MinIO component
-minio_component = MinioObjectComponent(
-    endpoint="minio:9090",
-    bucket_name="orx-datalake"
-)
+logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+log = logging.getLogger("datorcloud.examples.basic")
 
-# Initialize the metadata component
-metadata_component = MetadataGeneratorComponent(
-    output_file="./data/metadata_orx-datahub.csv",
-    minio_component=minio_component,
-    metadata_bucket="orx-metadata"
-)
 
-# Initialize query component
-query_component = MetadataQueryComponent(
-    minio_component=minio_component,
-    metadata_bucket="orx-metadata"
-)
+def main() -> None:
+    data_bucket = "orx-datalake"
+    metadata_bucket = "orx-metadata"
+    metadata_filename = "metadata_orx-datahub.csv"
+    local_metadata_path = f"./data/{metadata_filename}"
+    metadata_s3_path = f"s3://{metadata_bucket}/{metadata_filename}"
 
-# Initialize retrieval component
-retrieval_component = ObjectRetrievalComponent(
-    minio_component=minio_component,
-    local_download_dir="./data/retrieved"
-)
-
-# Define dataset paths
-dataset_paths = {
-    "4dor-dataset": "./data/4dor-dataset",
-    "orx-experiments": "./data/orx-experiments"
-}
-
-# 1. Upload datasets to MinIO
-print("Uploading datasets to MinIO...")
-upload_results = {}
-for dataset_name, directory_path in dataset_paths.items():
-    uploaded_files = minio_component.upload_directory(
-        directory_path=directory_path,
-        object_prefix=f"{dataset_name}/"
+    minio_component = MinioObjectComponent(
+        endpoint="minio:9090",
+        access_key="minioadmin",
+        secret_key="minioadmin",
     )
-    upload_results[dataset_name] = uploaded_files
-
-print(f"Upload complete. Processed {sum(len(files) for files in upload_results.values())} files.")
-
-# 2. Generate and upload metadata
-print("\nGenerating metadata...")
-metadata_df = metadata_component.generate_metadata(
-    dataset_dirs=dataset_paths
-)
-print(f"Metadata generated with {len(metadata_df)} records.")
-
-# Upload metadata to MinIO
-metadata_component.upload_metadata()
-print("Metadata uploaded to MinIO.")
-
-# 3. Query metadata for a specific camera
-print("\nQuerying metadata for camera01...")
-results = query_component.query_metadata(
-    filters={"camera_id": "camera01"},
-    limit=10
-)
-print(f"Found {len(results)} records. Sample data:")
-print(results.head())
-
-# 4. Retrieve files for an experiment
-print("\nRetrieving data for a specific experiment...")
-dataset = "4dor-dataset"
-experiment = results["experiment"].iloc[0] if not results.empty else None
-
-if experiment:
-    downloaded_files = retrieval_component.retrieve_objects(
-        metadata_df=results[results["dataset"] == dataset],
-        max_files=5
+    metadata_generator = MetadataGeneratorComponent()
+    metadata_storage = MetadataStorageComponent(
+        minio_component=minio_component,
+        metadata_bucket=metadata_bucket,
     )
-    print(f"Downloaded {len(downloaded_files)} files from experiment '{experiment}'")
-    for file_info in downloaded_files:
-        print(f"  - {file_info['local_path']} (Success: {file_info['success']})")
-else:
-    print("No experiments found in the query results.") 
+    query_component = QueryComponent(
+        s3_endpoint="minio:9090",
+        s3_access_key="minioadmin",
+        s3_secret_key="minioadmin",
+    )
+    retrieval_component = ObjectRetrievalComponent(
+        minio_component=minio_component,
+        query_component=query_component,
+        local_base_dir="./retrieved_data",
+    )
+
+    dataset_paths = {
+        "4dor-dataset": "./data/4dor-dataset",
+        "orx-experiments": "./data/orx-experiments",
+    }
+
+    # 1. Upload datasets to MinIO
+    log.info("Uploading datasets to MinIO...")
+    minio_component.ensure_bucket_exists(data_bucket)
+    upload_results = {}
+    for dataset_name, directory_path in dataset_paths.items():
+        if not os.path.exists(directory_path):
+            log.warning("Dataset path %s does not exist, skipping.", directory_path)
+            continue
+        upload_results[dataset_name] = minio_component.upload_directory(
+            local_directory=directory_path,
+            bucket_name=data_bucket,
+            prefix=dataset_name,
+        )
+    total = sum(len(v) for v in upload_results.values())
+    log.info("Upload complete (%s files processed).", total)
+
+    # 2. Generate metadata and store it in MinIO
+    log.info("Generating and uploading metadata...")
+    metadata_df = metadata_storage.create_metadata_and_store(
+        metadata_generator_component=metadata_generator,
+        dataset_dirs=dataset_paths,
+        local_file_path=local_metadata_path,
+        object_name=metadata_filename,
+    )
+    log.info("Generated metadata with %s records.", len(metadata_df))
+
+    # 3. Query metadata for a specific camera
+    log.info("Querying metadata for camera01...")
+    results = query_component.query_metadata(
+        metadata_file=metadata_s3_path,
+        filters={"camera_id": "camera01"},
+        limit=10,
+    )
+    log.info("Found %s records.", len(results))
+
+    # 4. Retrieve a few files for the first matching experiment
+    if not results.empty:
+        experiment = results["experiment"].iloc[0]
+        log.info("Retrieving files for experiment %s ...", experiment)
+        downloaded = retrieval_component.retrieve_experiment_data(
+            metadata_file=metadata_s3_path,
+            dataset="4dor-dataset",
+            experiment=experiment,
+            data_bucket=data_bucket,
+            camera_id="camera01",
+        )
+        log.info("Downloaded %s files.", len(downloaded))
+    else:
+        log.info("No records matched the query; skipping retrieval.")
+
+
+if __name__ == "__main__":
+    main()
