@@ -12,8 +12,8 @@ Every subcommand accepts:
 | Flag                          | Default                                | Description                              |
 | ----------------------------- | -------------------------------------- | ---------------------------------------- |
 | `--minio-endpoint`            | `$S3_ENDPOINT` or `minio:9090`         | MinIO host:port (no scheme).             |
-| `--minio-access-key`          | `$S3_ACCESS_KEY` or `minioadmin`       | MinIO access key.                        |
-| `--minio-secret-key`          | `$S3_SECRET_KEY` or `minioadmin`       | MinIO secret key.                        |
+| `--minio-access-key`          | `$S3_ACCESS_KEY` (**required**)        | MinIO access key. The CLI exits with an error when neither the env var nor the flag is provided. |
+| `--minio-secret-key`          | `$S3_SECRET_KEY` (**required**)        | MinIO secret key. The CLI exits with an error when neither the env var nor the flag is provided. |
 | `--minio-secure`              | off                                    | Use HTTPS for MinIO.                     |
 | `--data-bucket`               | `orx-datalake`                         | Bucket used for raw data.                |
 | `--metadata-bucket`           | `orx-metadata`                         | Bucket used for the metadata CSV.        |

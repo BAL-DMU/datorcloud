@@ -6,20 +6,22 @@ own workflow).
 
 ## Orchestrator
 
+`DatorCloudOrchestrator.from_env()` is the recommended entry point: it reads
+every connection and storage value from the project `.env` and raises a clear
+error if a required credential is missing.
+
 ```python
 import os
-from dotenv import load_dotenv
 from datorcloud.core import DatorCloudOrchestrator
 
-load_dotenv()  # populate DATA_LAKE_PATH, S3_*, RETRIEVED_DATA_PATH from .env
-
-DATA_LAKE = os.environ.get("DATA_LAKE_PATH", "./data_lake")
-
-orch = DatorCloudOrchestrator(
-    minio_endpoint="minio:9090",
+# from_env() internally calls load_dotenv() and reads S3_ENDPOINT,
+# S3_ACCESS_KEY, S3_SECRET_KEY, DATA_LAKE_PATH, RETRIEVED_DATA_PATH, ...
+orch = DatorCloudOrchestrator.from_env(
     data_bucket="orx-datalake",
     metadata_bucket="orx-metadata",
 )
+
+DATA_LAKE = os.environ.get("DATA_LAKE_PATH", "./data_lake")
 
 orch.upload_datasets({"4dor-dataset": f"{DATA_LAKE}/4dor-dataset"})
 
@@ -50,7 +52,12 @@ orch = DatorCloudOrchestrator(
 
 ## Individual components
 
+Credentials are required arguments — no `"minioadmin"` fallbacks live in the
+library code. Load `.env` once and forward the values into each component.
+
 ```python
+import os
+from dotenv import load_dotenv
 from datorcloud import (
     MinioObjectComponent,
     MetadataGeneratorComponent,
@@ -59,7 +66,16 @@ from datorcloud import (
     ObjectRetrievalComponent,
 )
 
-minio = MinioObjectComponent(endpoint="minio:9090")
+load_dotenv()
+S3_ENDPOINT = os.environ.get("S3_ENDPOINT", "minio:9090")
+S3_ACCESS_KEY = os.environ["S3_ACCESS_KEY"]
+S3_SECRET_KEY = os.environ["S3_SECRET_KEY"]
+
+minio = MinioObjectComponent(
+    endpoint=S3_ENDPOINT,
+    access_key=S3_ACCESS_KEY,
+    secret_key=S3_SECRET_KEY,
+)
 minio.upload_directory(f"{DATA_LAKE}/4dor-dataset", "orx-datalake", prefix="4dor-dataset")
 
 generator = MetadataGeneratorComponent()
@@ -71,7 +87,11 @@ df = storage.create_metadata_and_store(
     object_name="metadata.csv",
 )
 
-query = QueryComponent(s3_endpoint="minio:9090")
+query = QueryComponent(
+    s3_endpoint=S3_ENDPOINT,
+    s3_access_key=S3_ACCESS_KEY,
+    s3_secret_key=S3_SECRET_KEY,
+)
 retrieval = ObjectRetrievalComponent(minio_component=minio, query_component=query)
 
 results = query.query_metadata(

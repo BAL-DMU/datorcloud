@@ -35,7 +35,13 @@ pip install -e .[dagster,test]
 
 ### Basic Usage
 
+Credentials must come from the project `.env` (loaded via `python-dotenv`),
+never hard-coded. Each component validates that real values were supplied.
+
 ```python
+import os
+from dotenv import load_dotenv
+
 from datorcloud import (
     MinioObjectComponent,
     MetadataGeneratorComponent,
@@ -44,10 +50,12 @@ from datorcloud import (
     ObjectRetrievalComponent,
 )
 
+load_dotenv()
+
 minio = MinioObjectComponent(
-    endpoint="minio:9090",
-    access_key="minioadmin",
-    secret_key="minioadmin",
+    endpoint=os.environ.get("S3_ENDPOINT", "minio:9090"),
+    access_key=os.environ["S3_ACCESS_KEY"],
+    secret_key=os.environ["S3_SECRET_KEY"],
 )
 
 # Upload a dataset directory (DATA_LAKE_PATH from .env defaults to ./dataspaces/data_lake)
@@ -71,11 +79,13 @@ metadata_df = storage.create_metadata_and_store(
 
 ### Orchestrated Usage
 
+The orchestrator ships a `from_env()` factory that wires every component
+from the project `.env` — no credentials are hard-coded.
+
 ```python
 from datorcloud.core import DatorCloudOrchestrator
 
-orchestrator = DatorCloudOrchestrator(
-    minio_endpoint="minio:9090",
+orchestrator = DatorCloudOrchestrator.from_env(
     data_bucket="orx-datalake",
     metadata_bucket="orx-metadata",
 )
@@ -102,12 +112,11 @@ from datorcloud.dagster import (
 )
 
 resource = DatorCloudResource(
-    minio_endpoint="minio:9090",
     data_bucket="orx-datalake",
     metadata_bucket="orx-metadata",
-    local_data_dir="./dataspaces/data_lake",
-    local_download_dir="./dataspaces/retrieved_data",
 )
+# Every other field (endpoint, credentials, paths) is pulled from .env via
+# Pydantic ``default_factory``; pass an explicit value to override any of them.
 
 datorcloud_job = define_asset_job(
     name="datorcloud_workflow_job",
