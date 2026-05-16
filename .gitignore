@@ -1,14 +1,15 @@
-## Big datasets that can be regenerated
-data/archive.zip
-data/metadata_orx-datahub.csv
-retrieved_data/
+## Project storage (PROJECT_ROOT). Track only the directory skeleton.
+dataspaces/**
+!dataspaces/data_lake/
+!dataspaces/data_warehouse/
+!dataspaces/retrieved_data/
+!dataspaces/**/.gitkeep
 
-## DatorCloud
+## Python build / test artifacts
 __pycache__/
 *.py[cod]
 *.egg-info/
 *.egg
-build/datorcloud-cli/*.tar
 .pytest_cache/
 .coverage
 .coverage.*
@@ -25,12 +26,12 @@ _site_check/
 *.db
 *.ddb
 
-## docker images
-*.tar.env.prod
+## Docker image tarballs
+build/**/*.tar
 docker/*
 
-## .env file
+## Environment overrides
 .env.prod
 
-## DuckDB UI script
+## Local helper scripts
 start-duckdb.sh
