@@ -15,10 +15,23 @@ import os
 import sys
 from typing import Any, Dict, List, Optional, Sequence
 
+try:
+    from dotenv import load_dotenv  # type: ignore[import-untyped]
+
+    load_dotenv()
+except ImportError:  # python-dotenv is optional; bare os.environ still works.
+    pass
+
 from . import __version__
 from .core import DatorCloudOrchestrator
 
 log = logging.getLogger("datorcloud.cli")
+
+
+def _env_path(name: str, default: str) -> str:
+    """Return the env-var ``name`` or ``default`` if unset/empty."""
+    value = os.environ.get(name)
+    return value if value else default
 
 
 def _parse_kv_pairs(values: Optional[Sequence[str]]) -> Dict[str, str]:
@@ -69,7 +82,10 @@ def _add_common_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--minio-secure", action="store_true")
     parser.add_argument("--data-bucket", default="orx-datalake")
     parser.add_argument("--metadata-bucket", default="orx-metadata")
-    parser.add_argument("--local-download-dir", default="./retrieved_data")
+    parser.add_argument(
+        "--local-download-dir",
+        default=_env_path("RETRIEVED_DATA_PATH", "./retrieved_data"),
+    )
     parser.add_argument("--duckdb-extension-path", default=None)
     parser.add_argument(
         "-v", "--verbose", action="count", default=0, help="Increase log verbosity."
@@ -158,7 +174,12 @@ def build_parser() -> argparse.ArgumentParser:
         "metadata", help="Generate metadata for datasets and upload to MinIO."
     )
     p_meta.add_argument("--dataset", action="append", required=True)
-    p_meta.add_argument("--output-file", default="./data/metadata.csv")
+    p_meta.add_argument(
+        "--output-file",
+        default=os.path.join(
+            _env_path("DATA_LAKE_PATH", "./data_lake"), "metadata.csv"
+        ),
+    )
     p_meta.add_argument("--object-name", default="metadata.csv")
     _add_common_args(p_meta)
     p_meta.set_defaults(func=_cmd_metadata)

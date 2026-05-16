@@ -5,10 +5,20 @@
 2. Generate and store metadata
 3. Query metadata
 4. Retrieve data based on the query
+
+All connection settings and storage paths are read from the project ``.env``
+file (see ``.env.example`` for the full list of variables).
 """
 
 import logging
 import os
+
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except ImportError:
+    pass
 
 from datorcloud import (
     MetadataGeneratorComponent,
@@ -22,17 +32,32 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(messag
 log = logging.getLogger("datorcloud.examples.basic")
 
 
+def _env(name: str, default: str) -> str:
+    value = os.environ.get(name)
+    return value if value else default
+
+
+def _endpoint() -> str:
+    """Strip the scheme from ``S3_ENDPOINT`` (the Minio SDK wants host:port)."""
+    raw = _env("S3_ENDPOINT", "minio:9090")
+    return raw.replace("http://", "").replace("https://", "")
+
+
 def main() -> None:
     data_bucket = "orx-datalake"
     metadata_bucket = "orx-metadata"
     metadata_filename = "metadata_orx-datahub.csv"
-    local_metadata_path = f"./data/{metadata_filename}"
+
+    data_lake = _env("DATA_LAKE_PATH", "./data_lake")
+    retrieved_dir = _env("RETRIEVED_DATA_PATH", "./retrieved_data")
+
+    local_metadata_path = os.path.join(data_lake, metadata_filename)
     metadata_s3_path = f"s3://{metadata_bucket}/{metadata_filename}"
 
     minio_component = MinioObjectComponent(
-        endpoint="minio:9090",
-        access_key="minioadmin",
-        secret_key="minioadmin",
+        endpoint=_endpoint(),
+        access_key=_env("S3_ACCESS_KEY", "minioadmin"),
+        secret_key=_env("S3_SECRET_KEY", "minioadmin"),
     )
     metadata_generator = MetadataGeneratorComponent()
     metadata_storage = MetadataStorageComponent(
@@ -40,22 +65,21 @@ def main() -> None:
         metadata_bucket=metadata_bucket,
     )
     query_component = QueryComponent(
-        s3_endpoint="minio:9090",
-        s3_access_key="minioadmin",
-        s3_secret_key="minioadmin",
+        s3_endpoint=_endpoint(),
+        s3_access_key=_env("S3_ACCESS_KEY", "minioadmin"),
+        s3_secret_key=_env("S3_SECRET_KEY", "minioadmin"),
     )
     retrieval_component = ObjectRetrievalComponent(
         minio_component=minio_component,
         query_component=query_component,
-        local_base_dir="./retrieved_data",
+        local_base_dir=retrieved_dir,
     )
 
     dataset_paths = {
-        "4dor-dataset": "./data/4dor-dataset",
-        "orx-experiments": "./data/orx-experiments",
+        "4dor-dataset": os.path.join(data_lake, "4dor-dataset"),
+        "orx-experiments": os.path.join(data_lake, "orx-experiments"),
     }
 
-    # 1. Upload datasets to MinIO
     log.info("Uploading datasets to MinIO...")
     minio_component.ensure_bucket_exists(data_bucket)
     upload_results = {}
@@ -71,7 +95,6 @@ def main() -> None:
     total = sum(len(v) for v in upload_results.values())
     log.info("Upload complete (%s files processed).", total)
 
-    # 2. Generate metadata and store it in MinIO
     log.info("Generating and uploading metadata...")
     metadata_df = metadata_storage.create_metadata_and_store(
         metadata_generator_component=metadata_generator,
@@ -81,7 +104,6 @@ def main() -> None:
     )
     log.info("Generated metadata with %s records.", len(metadata_df))
 
-    # 3. Query metadata for a specific camera
     log.info("Querying metadata for camera01...")
     results = query_component.query_metadata(
         metadata_file=metadata_s3_path,
@@ -90,7 +112,6 @@ def main() -> None:
     )
     log.info("Found %s records.", len(results))
 
-    # 4. Retrieve a few files for the first matching experiment
     if not results.empty:
         experiment = results["experiment"].iloc[0]
         log.info("Retrieving files for experiment %s ...", experiment)

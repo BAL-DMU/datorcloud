@@ -6,6 +6,7 @@
 minio>=7.1.15
 duckdb>=1.2.0
 pandas>=1.5.3
+python-dotenv>=1.0.0
 
 # Dagster integration (optional, install with pip install -e .[dagster])
 dagster>=1.4.0

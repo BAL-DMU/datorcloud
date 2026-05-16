@@ -33,7 +33,7 @@ class DatorCloudOrchestrator:
         s3_region: str = "us-east-1",
         data_bucket: str = "orx-datalake",
         metadata_bucket: str = "orx-metadata",
-        local_data_dir: str = "./data",
+        local_data_dir: str = "./data_lake",
         local_download_dir: str = "./retrieved_data",
         duckdb_extension_path: Optional[str] = None,
         minio_component: Optional[MinioObjectComponent] = None,

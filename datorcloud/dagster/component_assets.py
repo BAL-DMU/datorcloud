@@ -58,7 +58,7 @@ class DatorCloudResource(ConfigurableResource):
     s3_region: str = "us-east-1"
     data_bucket: str = "orx-datalake"
     metadata_bucket: str = "orx-metadata"
-    local_data_dir: str = "./data"
+    local_data_dir: str = "./data_lake"
     local_download_dir: str = "./retrieved_data"
     duckdb_extension_path: Optional[str] = Field(
         default=None,
@@ -126,7 +126,7 @@ class GenerateMetadataConfig(Config):
     """Configuration for the ``generate_metadata`` asset."""
 
     dataset_dirs: Dict[str, str]
-    output_file: str = "./data/metadata.csv"
+    output_file: str = "./data_lake/metadata.csv"
     bucket_name: Optional[str] = None
     object_name: str = "metadata.csv"
 
