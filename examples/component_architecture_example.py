@@ -2,7 +2,10 @@
 """Example using DatorCloud's Component-Oriented Architecture.
 
 Connection settings and storage paths are read from the project ``.env`` file
-(see ``.env.example``).
+(see ``.env.example``). The orchestrator section uses
+:meth:`DatorCloudOrchestrator.from_env` to keep the wiring to a single call;
+the individual-component section reads the same variables directly to make the
+data flow explicit.
 """
 
 import os
@@ -27,6 +30,16 @@ def _env(name: str, default: str) -> str:
     return value if value else default
 
 
+def _required_env(name: str) -> str:
+    value = os.environ.get(name)
+    if not value:
+        raise RuntimeError(
+            f"Required environment variable {name} is not set. "
+            "Add it to your .env file before running this example."
+        )
+    return value
+
+
 def _endpoint() -> str:
     raw = _env("S3_ENDPOINT", "minio:9090")
     return raw.replace("http://", "").replace("https://", "")
@@ -34,6 +47,8 @@ def _endpoint() -> str:
 
 DATA_LAKE_PATH = _env("DATA_LAKE_PATH", "./data_lake")
 RETRIEVED_DATA_PATH = _env("RETRIEVED_DATA_PATH", "./retrieved_data")
+DATA_BUCKET = _env("DATA_BUCKET", "orx-datalake")
+METADATA_BUCKET = _env("METADATA_BUCKET", "orx-metadata")
 
 
 def main():
@@ -46,14 +61,9 @@ def main():
 
 def orchestrator_example():
     """Example workflow using the DatorCloudOrchestrator."""
-    orchestrator = DatorCloudOrchestrator(
-        minio_endpoint=_endpoint(),
-        minio_access_key=_env("S3_ACCESS_KEY", "minioadmin"),
-        minio_secret_key=_env("S3_SECRET_KEY", "minioadmin"),
-        data_bucket="orx-datalake",
-        metadata_bucket="orx-metadata",
-        local_data_dir=DATA_LAKE_PATH,
-        local_download_dir=RETRIEVED_DATA_PATH,
+    orchestrator = DatorCloudOrchestrator.from_env(
+        data_bucket=DATA_BUCKET,
+        metadata_bucket=METADATA_BUCKET,
     )
 
     dataset_paths = {
@@ -108,20 +118,23 @@ def orchestrator_example():
 
 def component_example():
     """Example workflow using individual components directly."""
+    s3_access_key = _required_env("S3_ACCESS_KEY")
+    s3_secret_key = _required_env("S3_SECRET_KEY")
+
     minio_component = MinioObjectComponent(
         endpoint=_endpoint(),
-        access_key=_env("S3_ACCESS_KEY", "minioadmin"),
-        secret_key=_env("S3_SECRET_KEY", "minioadmin"),
+        access_key=s3_access_key,
+        secret_key=s3_secret_key,
     )
     metadata_generator = MetadataGeneratorComponent()
     query_component = QueryComponent(
         s3_endpoint=_endpoint(),
-        s3_access_key=_env("S3_ACCESS_KEY", "minioadmin"),
-        s3_secret_key=_env("S3_SECRET_KEY", "minioadmin"),
+        s3_access_key=s3_access_key,
+        s3_secret_key=s3_secret_key,
     )
     metadata_storage = MetadataStorageComponent(
         minio_component=minio_component,
-        metadata_bucket="orx-metadata",
+        metadata_bucket=METADATA_BUCKET,
     )
     retrieval_component = ObjectRetrievalComponent(
         minio_component=minio_component,
@@ -133,21 +146,19 @@ def component_example():
         "4dor-dataset": os.path.join(DATA_LAKE_PATH, "4dor-dataset"),
         "orx-experiments": os.path.join(DATA_LAKE_PATH, "orx-experiments"),
     }
-    data_bucket = "orx-datalake"
-    metadata_bucket = "orx-metadata"
     metadata_filename = "component_metadata.csv"
     metadata_file_path = os.path.join(DATA_LAKE_PATH, metadata_filename)
-    metadata_s3_path = f"s3://{metadata_bucket}/{metadata_filename}"
+    metadata_s3_path = f"s3://{METADATA_BUCKET}/{metadata_filename}"
 
     print("1. Uploading datasets directly with MinioObjectComponent...")
-    minio_component.ensure_bucket_exists(data_bucket)
+    minio_component.ensure_bucket_exists(DATA_BUCKET)
 
     processed_files = 0
     for dataset_name, dataset_path in dataset_paths.items():
         if os.path.exists(dataset_path):
             results = minio_component.upload_directory(
                 local_directory=dataset_path,
-                bucket_name=data_bucket,
+                bucket_name=DATA_BUCKET,
                 prefix=dataset_name,
             )
             processed_files += len(results)
@@ -159,7 +170,7 @@ def component_example():
         metadata_generator_component=metadata_generator,
         dataset_dirs=dataset_paths,
         local_file_path=metadata_file_path,
-        bucket_name=metadata_bucket,
+        bucket_name=METADATA_BUCKET,
         object_name=metadata_filename,
     )
     print(f"   Generated metadata with {len(metadata)} records.")
@@ -180,7 +191,7 @@ def component_example():
         downloaded_files = retrieval_component.retrieve_objects(
             metadata_file=metadata_s3_path,
             dataset="4dor-dataset",
-            data_bucket=data_bucket,
+            data_bucket=DATA_BUCKET,
             max_files=3,
             **filters,
         )
@@ -188,7 +199,7 @@ def component_example():
 
     print("   Verifying metadata file in MinIO...")
     try:
-        minio_component.client.stat_object(metadata_bucket, metadata_filename)
+        minio_component.client.stat_object(METADATA_BUCKET, metadata_filename)
         print(f"   Metadata file exists in MinIO: {metadata_filename}")
     except Exception as e:
         print(f"   Warning: Could not verify metadata file in MinIO: {e}")

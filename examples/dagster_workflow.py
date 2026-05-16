@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 """Example Dagster workspace for the DatorCloud component pipeline.
 
-Connection settings and storage paths are read from the project ``.env`` file
-(see ``.env.example``).
+``DatorCloudResource`` reads its connection and storage defaults straight from
+the environment (see ``.env.example``). Calling it with no arguments is the
+recommended way to pick up the project's ``.env``; pass keyword arguments to
+override individual fields.
 
 Load with the Dagster CLI:
 
@@ -35,24 +37,17 @@ def _env(name: str, default: str) -> str:
     return value if value else default
 
 
-def _endpoint() -> str:
-    raw = _env("S3_ENDPOINT", "minio:9090")
-    return raw.replace("http://", "").replace("https://", "")
-
-
 DATA_LAKE_PATH = _env("DATA_LAKE_PATH", "./data_lake")
 RETRIEVED_DATA_PATH = _env("RETRIEVED_DATA_PATH", "./retrieved_data")
+DATA_BUCKET = _env("DATA_BUCKET", "orx-datalake")
+METADATA_BUCKET = _env("METADATA_BUCKET", "orx-metadata")
 
 
 datorcloud_resource = DatorCloudResource(
-    minio_endpoint=_endpoint(),
-    minio_access_key=_env("S3_ACCESS_KEY", "minioadmin"),
-    minio_secret_key=_env("S3_SECRET_KEY", "minioadmin"),
-    data_bucket="orx-datalake",
-    metadata_bucket="orx-metadata",
-    local_data_dir=DATA_LAKE_PATH,
-    local_download_dir=RETRIEVED_DATA_PATH,
+    data_bucket=DATA_BUCKET,
+    metadata_bucket=METADATA_BUCKET,
 )
+
 
 datorcloud_job = define_asset_job(
     name="datorcloud_workflow_job",
@@ -75,7 +70,7 @@ if __name__ == "__main__":
                         "4dor-dataset": os.path.join(DATA_LAKE_PATH, "4dor-dataset"),
                         "orx-experiments": os.path.join(DATA_LAKE_PATH, "orx-experiments"),
                     },
-                    "bucket_name": "orx-datalake",
+                    "bucket_name": DATA_BUCKET,
                 }
             },
             "generate_metadata": {
@@ -85,7 +80,7 @@ if __name__ == "__main__":
                         "orx-experiments": os.path.join(DATA_LAKE_PATH, "orx-experiments"),
                     },
                     "output_file": os.path.join(DATA_LAKE_PATH, "metadata_orx-datahub.csv"),
-                    "bucket_name": "orx-metadata",
+                    "bucket_name": METADATA_BUCKET,
                     "object_name": "metadata_orx-datahub.csv",
                 }
             },

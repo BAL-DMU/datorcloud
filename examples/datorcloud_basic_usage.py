@@ -7,7 +7,8 @@
 4. Retrieve data based on the query
 
 All connection settings and storage paths are read from the project ``.env``
-file (see ``.env.example`` for the full list of variables).
+file (see ``.env.example`` for the full list of variables). No credentials
+are ever hard-coded here: missing values surface as a clear ``RuntimeError``.
 """
 
 import logging
@@ -33,8 +34,20 @@ log = logging.getLogger("datorcloud.examples.basic")
 
 
 def _env(name: str, default: str) -> str:
+    """Return ``$name`` or ``default`` when the variable is unset/empty."""
     value = os.environ.get(name)
     return value if value else default
+
+
+def _required_env(name: str) -> str:
+    """Return ``$name`` or raise — used for secrets that must come from .env."""
+    value = os.environ.get(name)
+    if not value:
+        raise RuntimeError(
+            f"Required environment variable {name} is not set. "
+            "Add it to your .env file before running this example."
+        )
+    return value
 
 
 def _endpoint() -> str:
@@ -44,8 +57,8 @@ def _endpoint() -> str:
 
 
 def main() -> None:
-    data_bucket = "orx-datalake"
-    metadata_bucket = "orx-metadata"
+    data_bucket = _env("DATA_BUCKET", "orx-datalake")
+    metadata_bucket = _env("METADATA_BUCKET", "orx-metadata")
     metadata_filename = "metadata_orx-datahub.csv"
 
     data_lake = _env("DATA_LAKE_PATH", "./data_lake")
@@ -54,10 +67,13 @@ def main() -> None:
     local_metadata_path = os.path.join(data_lake, metadata_filename)
     metadata_s3_path = f"s3://{metadata_bucket}/{metadata_filename}"
 
+    s3_access_key = _required_env("S3_ACCESS_KEY")
+    s3_secret_key = _required_env("S3_SECRET_KEY")
+
     minio_component = MinioObjectComponent(
         endpoint=_endpoint(),
-        access_key=_env("S3_ACCESS_KEY", "minioadmin"),
-        secret_key=_env("S3_SECRET_KEY", "minioadmin"),
+        access_key=s3_access_key,
+        secret_key=s3_secret_key,
     )
     metadata_generator = MetadataGeneratorComponent()
     metadata_storage = MetadataStorageComponent(
@@ -66,8 +82,8 @@ def main() -> None:
     )
     query_component = QueryComponent(
         s3_endpoint=_endpoint(),
-        s3_access_key=_env("S3_ACCESS_KEY", "minioadmin"),
-        s3_secret_key=_env("S3_SECRET_KEY", "minioadmin"),
+        s3_access_key=s3_access_key,
+        s3_secret_key=s3_secret_key,
     )
     retrieval_component = ObjectRetrievalComponent(
         minio_component=minio_component,
