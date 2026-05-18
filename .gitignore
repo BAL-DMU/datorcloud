@@ -34,8 +34,12 @@ dagster_home/
 build/**/*.tar
 docker/*
 
-## Environment overrides
-.env.prod
+## Environment files — keep .env.example tracked as the template, but
+## NEVER commit machine-specific .env / .env.* files (they contain
+## credentials and host paths that must not leave the developer's box).
+.env
+.env.*
+!.env.example
 
 ## Local helper scripts
 start-duckdb.sh
