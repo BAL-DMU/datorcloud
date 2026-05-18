@@ -203,6 +203,12 @@ pytest -q
 You should see `30 passed`. The Dagster materialization test auto-skips when
 `dagster` is not installed.
 
+## Authors
+
+- **[Dr. John Anderson Garcia-Henao](https://github.com/jagh)** — main author and creator.
+- DatorCloud contributors — Digital Medicine Unit / OR-X Translational Center
+  for Surgery, Balgrist University Hospital.
+
 ## License
 
 BSD 3-Clause — see [LICENSE](LICENSE).
