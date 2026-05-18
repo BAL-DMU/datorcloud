@@ -3,10 +3,6 @@
 </p>
 
 <p align="center">
-  <img src="docs/assets/datorcloud-icon.png" alt="DatorCloud icon" width="160" />
-</p>
-
-<p align="center">
   <em>Lightweight, self-hosted framework for managing, querying, and sharing multimodal research data.</em>
 </p>
 
