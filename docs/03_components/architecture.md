@@ -76,8 +76,10 @@ DuckDB · MinIO · Python · Dagster (optional)
 
 ## Deployment environment
 
-- **SDCHub** — institutional Surgical Data Cloud Platform.
-- **BAL-JH Spaces** — JupyterHub research environment integrated with SDCHub.
+- **Trusted Research Environment (TRE)** — institutional secure research
+  compute and storage platform.
+- **BAL-JH Spaces** — JupyterHub research environment integrated with the
+  TRE.
 
 ## See also
 
