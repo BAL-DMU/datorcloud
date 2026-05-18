@@ -205,8 +205,8 @@ You should see `30 passed`. The Dagster materialization test auto-skips when
 
 ## Authors
 
-- **[Dr. John Anderson Garcia-Henao](https://github.com/jagh)** — main author and creator.
-- DatorCloud contributors — Digital Medicine Unit / OR-X Translational Center
+- **[Dr. John Anderson Garcia-Henao](https://github.com/jagh)** - main author and creator.
+- DatorCloud contributors - Digital Medicine Unit / OR-X Translational Center
   for Surgery, Balgrist University Hospital.
 
 ## License
