@@ -15,6 +15,11 @@ The reference page [Dagster Integration](dagster.md) describes
 `DatorCloudResource` and the individual asset symbols; this tutorial focuses
 on running the two jobs and reading the result.
 
+The default paths target the bundled **`4dor-dataset`**, a small dev sample
+whose multi-camera RGB/depth layout follows the [**4D-OR** dataset and
+codebase](https://github.com/egeozsoy/4D-OR). See [Dataset citation —
+4D-OR](#dataset-citation-4d-or) below for the paper and how to cite it.
+
 > **Convention used in this tutorial**
 >
 > Every command block is prefixed with the shell where it must be run:
@@ -310,6 +315,32 @@ host$ docker exec -e DATORCLOUD_DAGSTER_IO_DIR=/app/dataspaces/.dagster_io \
 | Empty Workflow B result                                              | The filter dict doesn't match any rows in the L2 metadata. Open `query_metadata`'s **Metadata** tab and check `result_count`; try a broader filter.      |
 | Dagster UI shows only one job                                        | The webserver loaded a stale workspace. Restart with `docker compose restart dagster` or run `dagster dev -f /app/workspace/examples/datorcloud_dagster_workflow.py` manually. |
 | Launchpad config rejected as invalid                                 | The YAML keys must match the `Config` class field names exactly (`dataset_paths`, `dataset_dirs`, `output_file`, `object_name`, `metadata_file`, `filters`, `limit`, `max_files`, `dataset`). |
+
+---
+
+## Dataset citation — 4D-OR
+
+If you publish work that uses concepts or data from **4D-OR**, cite the
+MICCAI 2022 paper and the canonical repository:
+
+- **Paper:** Özsoy, E., Örnek, E. P., Eck, U., Czempiel, T., Tombari, F., &
+  Navab, N. *4D-OR: Semantic Scene Graphs for OR Domain Modeling.*
+  MICCAI 2022. [Springer chapter](https://link.springer.com/chapter/10.1007/978-3-031-16449-1_45).
+- **Dataset & code:** [github.com/egeozsoy/4D-OR](https://github.com/egeozsoy/4D-OR)
+
+Optional BibTeX (MICCAI):
+
+```bibtex
+@inproceedings{Ozsoy2022_4D_OR,
+  title     = {4D-OR: Semantic Scene Graphs for OR Domain Modeling},
+  author    = {Özsoy, Ege and Örnek, Evin Pınar and Eck, Ulrich and
+               Czempiel, Tobias and Tombari, Federico and Navab, Nassir},
+  booktitle = {International Conference on Medical Image Computing and
+               Computer-Assisted Intervention},
+  year      = {2022},
+  publisher = {Springer}
+}
+```
 
 ---
 

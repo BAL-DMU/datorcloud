@@ -24,6 +24,12 @@ recording:
     └── (same structure)
 ```
 
+The layout mirrors multi-camera **RGB** and **depth** recordings from the
+[**4D-OR** project](https://github.com/egeozsoy/4D-OR) (semantic scene graphs
+for the operating room). The repository ships a small **dev slice** of that
+family of data as `4dor-dataset`; for the full dataset, evaluation splits,
+and licence terms, use the official repo above.
+
 > **Convention used in this tutorial**
 >
 > Every command block is prefixed with the shell where it must be run:
@@ -452,6 +458,33 @@ completes. The asset chain implements the same two workflows: `upload_datasets`
 | Empty query result in Workflow B                   | The metadata CSV lives in `orx-metadata`, **not** `orx-datalake`. Confirm the URL is `s3://orx-metadata/metadata_4dor.csv`.                          |
 | `404 NoSuchKey` during retrieve                    | Workflow A · Stage 2 (upload) did not complete; re-run the script.                                                                                   |
 | Dagster page does not load                         | Check that port **3030** is free on the host and that the `dagster` container is `Up`.                                                               |
+
+---
+
+## Dataset citation — 4D-OR
+
+This tutorial uses sample data aligned with the **4D-OR** dataset and
+methodology. If you publish work that builds on that data or codebase,
+please cite the MICCAI 2022 paper and link the canonical resources:
+
+- **Paper:** Özsoy, E., Örnek, E. P., Eck, U., Czempiel, T., Tombari, F., &
+  Navab, N. *4D-OR: Semantic Scene Graphs for OR Domain Modeling.*
+  MICCAI 2022. [Springer chapter](https://link.springer.com/chapter/10.1007/978-3-031-16449-1_45).
+- **Dataset & code:** [github.com/egeozsoy/4D-OR](https://github.com/egeozsoy/4D-OR)
+
+Optional BibTeX (MICCAI):
+
+```bibtex
+@inproceedings{Ozsoy2022_4D_OR,
+  title     = {4D-OR: Semantic Scene Graphs for OR Domain Modeling},
+  author    = {Özsoy, Ege and Örnek, Evin Pınar and Eck, Ulrich and
+               Czempiel, Tobias and Tombari, Federico and Navab, Nassir},
+  booktitle = {International Conference on Medical Image Computing and
+               Computer-Assisted Intervention},
+  year      = {2022},
+  publisher = {Springer}
+}
+```
 
 ---
 
