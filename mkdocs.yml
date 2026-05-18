@@ -1,6 +1,6 @@
 site_name: DatorCloud Framework Documentation
 site_description: Documentation for the DatorCloud Framework — a lightweight, self-hosted cloud framework for managing, querying, and sharing multimodal research data.
-site_author: Digital Medicine Unit / OR-X Translational Center for Surgery / Balgrist University Hospital
+site_author: Dr. John Anderson Garcia-Henao — Digital Medicine Unit / OR-X Translational Center for Surgery / Balgrist University Hospital
 
 nav:
   - Overview: 01_overview/overview.md
