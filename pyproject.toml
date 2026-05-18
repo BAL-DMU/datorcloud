@@ -9,7 +9,11 @@ description = "Modular, component-oriented framework for managing multimodal res
 readme = "README.md"
 license = { text = "BSD-3-Clause" }
 authors = [
+    { name = "John Anderson Garcia-Henao" },
     { name = "DatorCloud contributors" },
+]
+maintainers = [
+    { name = "John Anderson Garcia-Henao" },
 ]
 requires-python = ">=3.10"
 keywords = ["minio", "duckdb", "dagster", "data-management", "research"]
@@ -56,6 +60,7 @@ datorcloud = "datorcloud.cli:main"
 [project.urls]
 Homepage = "https://github.com/jagh/datorcloud"
 Issues = "https://github.com/jagh/datorcloud/issues"
+Author = "https://github.com/jagh"
 
 [tool.setuptools.packages.find]
 include = ["datorcloud*"]
