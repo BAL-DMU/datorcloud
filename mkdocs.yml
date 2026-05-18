@@ -16,6 +16,8 @@ nav:
 
 theme:
   name: readthedocs
+  logo: assets/datorcloud-logo.png
+  favicon: favicon.ico
   navigation_depth: 1
   collapse_navigation: false
   titles_only: false
@@ -28,6 +30,9 @@ markdown_extensions:
   - admonition
   - pymdownx.details
   - pymdownx.superfences
+
+extra_css:
+  - stylesheets/extra.css
 
 plugins:
   - search
