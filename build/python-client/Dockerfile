@@ -33,8 +33,14 @@ RUN curl --fail --location --progress-bar \
     && chmod +x /usr/local/bin/duckdb \
     && rm duckdb_cli-linux-amd64.zip
 
-# 3. Create DuckDB extension directory and install HTTPFS extension
-# Note: We create the directory with explicit permissions and ownership
+# 3. Pre-download the HTTPFS extension binary so air-gapped runs can
+#    `LOAD '${DUCKDB_HTTPFS_EXTENSION_PATH}/httpfs.duckdb_extension'`
+#    without internet access. We intentionally do NOT write a sibling
+#    `httpfs.duckdb_extension.info`: DuckDB expects a binary serialization
+#    there and rejects any other content with
+#    `Failed to deserialize: field id mismatch ...`. When the .info file is
+#    absent, DuckDB simply ignores the cache and `INSTALL`/`LOAD <path>`
+#    behave normally.
 RUN mkdir -p ${DUCKDB_EXTENSION_PATH} \
     && chmod 755 $(dirname ${DUCKDB_EXTENSION_PATH}) \
     && curl -L --fail \
@@ -42,9 +48,7 @@ RUN mkdir -p ${DUCKDB_EXTENSION_PATH} \
     "https://extensions.duckdb.org/${DUCKDB_VERSION}/linux_amd64_gcc4/httpfs.duckdb_extension.gz" \
     && gunzip /tmp/httpfs.duckdb_extension.gz \
     && mv /tmp/httpfs.duckdb_extension ${DUCKDB_EXTENSION_PATH}httpfs.duckdb_extension \
-    && chmod 755 ${DUCKDB_EXTENSION_PATH}httpfs.duckdb_extension \
-    && echo '{"name": "httpfs", "version": "1.2.0"}' > ${DUCKDB_EXTENSION_PATH}httpfs.duckdb_extension.info \
-    && chmod 644 ${DUCKDB_EXTENSION_PATH}httpfs.duckdb_extension.info
+    && chmod 755 ${DUCKDB_EXTENSION_PATH}httpfs.duckdb_extension
 
 # 4. Install Miniconda
 RUN wget --progress=bar:force:noscroll \
