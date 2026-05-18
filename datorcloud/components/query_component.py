@@ -82,7 +82,16 @@ class QueryComponent:
         )
 
     def _configure_httpfs(self, explicit_path: Optional[str]) -> None:
-        """Load the httpfs extension, trying several strategies."""
+        """Load the httpfs extension, trying several strategies in order:
+
+        1. Plain ``LOAD httpfs`` — works when a healthy copy is already cached.
+        2. ``LOAD '<path>'`` from an explicit path or ``DUCKDB_HTTPFS_EXTENSION_PATH``.
+        3. ``INSTALL httpfs`` from the DuckDB extension repository.
+        4. ``FORCE INSTALL httpfs`` to overwrite a stale or corrupt local cache.
+           This rescues containers where a prebaked ``httpfs.duckdb_extension.info``
+           file was written in a format the current DuckDB cannot deserialize
+           (the classic ``field id mismatch, expected: 100, got: NNNN`` error).
+        """
         try:
             self.conn.execute("LOAD httpfs")
             log.debug("Loaded DuckDB httpfs extension via standard resolution")
@@ -99,13 +108,19 @@ class QueryComponent:
             except Exception as exc:
                 log.warning("Failed to load httpfs from %s: %s", candidate, exc)
 
-        try:
-            self.conn.execute("INSTALL httpfs")
-            self.conn.execute("LOAD httpfs")
-            log.info("Installed and loaded DuckDB httpfs extension")
-        except Exception as exc:
-            log.error("Could not load DuckDB httpfs extension: %s", exc)
-            raise RuntimeError("Failed to load httpfs extension") from exc
+        last_exc: Optional[Exception] = None
+        for stmt in ("INSTALL httpfs", "FORCE INSTALL httpfs"):
+            try:
+                self.conn.execute(stmt)
+                self.conn.execute("LOAD httpfs")
+                log.info("Installed and loaded DuckDB httpfs extension via `%s`", stmt)
+                return
+            except Exception as exc:
+                log.warning("`%s` failed: %s", stmt, exc)
+                last_exc = exc
+
+        log.error("Could not load DuckDB httpfs extension: %s", last_exc)
+        raise RuntimeError("Failed to load httpfs extension") from last_exc
 
     def _configure_s3(
         self,
