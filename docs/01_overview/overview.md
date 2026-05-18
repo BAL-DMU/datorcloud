@@ -1,28 +1,58 @@
-# ORX-SurgDataHub: A Surgical Data Science Platform for Managing and Populate Multimodal Datasets
+# DatorCloud Framework
 
-![Surgical Data Platform Architecture](orx-surgdatahub_scheme.png)
+**DatorCloud** is a lightweight, self-hosted cloud framework developed at
+**Balgrist University Hospital** and the **OR-X Translational Center for
+Surgery** to simplify the management, analysis, and sharing of multimodal
+research data. Built on **DuckDB** and **MinIO**, it enables fast, SQL-like
+queries on S3-compatible storage without the need for complex
+infrastructure.
 
-**ORX-SurgDataHub** is a surgical data science platform designed to manage and populate multimodal datasets from surgical experiments. It integrates data from various sensors and effectors (surgeons and researchers) in ex-vivo (outside of a living body) surgical setups, capturing both input and output data through a ROS2-based data streaming system. The ORX-SurgDataHub core module, handles data ingestion, storage, and database operations, manages ETL workflows, catalogs experiments, and populates datasets to support research needs. This data is then organized by experiment and processed into specific datasets (e.g., hip, knee, spine) accessible to the research community through a public repository. This setup aims to support scientific research and improve data accessibility and reproducibility in surgical science.
+Designed for secure and collaborative use via **JupyterHub**, DatorCloud
+enhances and complements **BAL-JH Spaces** by adding powerful features for
+organizing, querying, and publishing rich, multimodal datasets such as
+images, video, sensor data, and clinical data. Its modular and scalable
+design makes it suitable for research groups, labs, and institutions of any
+size.
 
+> **BAL-JH Spaces** is a secure, cloud-based research environment tailored
+> for Balgrist researchers, built on JupyterHub and fully integrated with
+> institutional infrastructure. It provides the foundational computing
+> environment for many AI/ML research workflows at Balgrist.
 
-### Key Components:
+![DatorCloud framework — high-level architecture](../03_components/datorcloud_architecture.png)
 
-+ **ORX-Experiments:** Stores collected data and execution pipelines from various surgical experiments.
-+ **ORX-Datasets:** Manages and centralizes surgical datasets, providing secure access for researchers.
+## Key features of DatorCloud
 
-### Data Model:
-+ **Layer 1 - Experiment Card:** Contains essential metadata for each surgical experiment.
-+ **Layer 2 - File Objects:** Stores metadata on files and relationships between devices and data files.
-+ **Layer 3 - Semantic Layer:** Applies an ontology to establish contextual relationships for experiments’ workflow.
-+ **Layer 4 - Dataset Composition:** Supports selection and composition of datasets based on experimental data.
+- **Multimodal Data Management** — Organize and access diverse datasets
+  including images, video, sensor data, and clinical data in a web-based
+  framework.
+- **Unified Dataset Catalog** — Govern and browse experiment data and
+  datasets by institution, unit, researcher, or experimental context.
+- **Dataset Composition & Publishing** — Build custom datasets with SQL-like
+  queries on object storage and manage publication with integrated access
+  controls.
+- **Structured, Traceable Access** — Perform complex queries and retrieval
+  across datasets and the object store using DuckDB and MinIO CLIs, enabling
+  deep analysis with fewer data duplications.
 
-### Core Operations:
-+ **Data Extraction and Ingestion:** Experiment-based data objects are extracted and stored in the ORX-Datalake using MinIO, ensuring scalable and robust data management.
-+ **Remote Querying and Downloading:** DuckDB enables researchers to perform remote queries and download specific experiment-based data objects, supporting efficient data retrieval.
-+ **Dataset Selection and Composition:** OR-X researchers can select experiments and data objects to compile and populate relevant datasets for surgical studies.
+## Shared capabilities with BAL-JH Spaces
 
+- **Web-Based Access & Analysis** — Work directly in the browser via
+  JupyterHub without local setup.
+- **Pre-Configured AI/ML Environments** — Launch Docker-based workspaces
+  with ready-to-use tools and libraries.
+- **On-Demand Compute Access** — Leverage local and remote GPU resources for
+  heavy data processing and model training.
+- **Collaborative Workspaces** — Share code, results, and environments to
+  support reproducible, team-based research.
 
-### User Types:
-+ **Public Researchers:** Academic users with access to publicly available datasets.
-+ **Internal Researchers:** ORX and Balgrist researchers with access to experiment-based data for research.
-+ **Commercial Partners:** ORX customers with exclusive access to their experiment-based data.
+## Where to go next
+
+- [Installation](../02_installation/installing_core_data_platform.md) —
+  deploy the DuckDB + MinIO stack with Docker Compose.
+- [Component Architecture](../03_components/architecture.md) — the four-layer
+  data model, components, and orchestrator.
+- [Quickstart](../04_user_guide/quickstart.md) — fresh clone to a working
+  pipeline in five minutes.
+- [Contributing](../05_contributing/contributing.md) — extend the framework
+  with new components.

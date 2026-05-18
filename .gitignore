@@ -1,18 +1,50 @@
-## Big datasets that can be regenerated
-data/archive.zip
-data/metadata_orx-datahub.csv
-retrieved_data/
+## Project storage (PROJECT_ROOT). Track only the directory skeleton.
+dataspaces/**
+!dataspaces/data_lake/
+!dataspaces/data_warehouse/
+!dataspaces/retrieved_data/
+!dataspaces/**/.gitkeep
+
+## ...but DO track the bundled 4dor-dataset sample so that the tutorials,
+## examples and Dagster jobs work out of the box on a fresh clone.
+!dataspaces/data_lake/4dor-dataset/
+!dataspaces/data_lake/4dor-dataset/**
+
+## Python build / test artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.venv/
+venv/
+
+## MkDocs site
+site/
+_site_check/
 
 ## DuckDB files
 *.db
 *.ddb
 
-## docker images
-*.tar.env.prod
+## Dagster ephemeral home dirs (created by execute_in_process / dagster dev)
+.tmp_dagster_home_*/
+dagster_home/
+
+## Docker image tarballs
+build/**/*.tar
 docker/*
 
-## .env file
-.env.prod
+## Environment files — keep .env.example tracked as the template, but
+## NEVER commit machine-specific .env / .env.* files (they contain
+## credentials and host paths that must not leave the developer's box).
+.env
+.env.*
+!.env.example
 
-## DuckDB UI script
+## Local helper scripts
 start-duckdb.sh

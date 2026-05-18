@@ -1,43 +1,36 @@
 ##############################################################
-## Docker Compose File for DuckDB and MinIO Services
-
-## This compose docker must to pre-load the docker images for DuckDB and MinIO services.
-## The images are available in the local repository docker folder: duckdb_image.tar and minio_image.tar
-## To load the images, use the following commands:
-## docker load -i docker/duckdb_image.tar
-## docker load -i docker/minio_image.tar
-## docker load -i docker/python_image.tar
-
-## To run the docker compose, use the following command:
-## docker-compose up -d
-
-## If you do want to connect to DuckDB later, you can do:
-## docker exec -it duckdb bash or docker exec -it duckdb duckdb
-
-## If you do want to connect to MinIO later, you can do:
-## docker exec -it minio bash or docker exec -it minio mc
-
-## If you do want to connect to Python Runner later, you can do:
-## docker exec -it python-runner bash
-
-## To stop the services, use the following command:
-## docker-compose down
+## Docker Compose File for DuckDB, MinIO, and Dagster Services
+##
+## MinIO and DuckDB pull directly from upstream registries; the dagster,
+## datorcloud-cli, and python-runner images come from Docker Hub
+## (jagh1729/*). For air-gapped installs you can still preload local
+## tarballs via `docker load -i docker/<image>.tar`.
+##
+## To start the stack:
+##   docker compose up -d
+##
+## To connect to the services:
+##   DuckDB         docker exec -it duckdb duckdb
+##                  (distroless image — no shell available)
+##   MinIO          docker exec -it minio mc
+##   Dagster        docker exec -it dagster bash
+##   DatorCloud CLI docker exec -it datorcloud-cli bash
+##   Python runner  docker exec -it python-runner bash
+##
+## To stop:
+##   docker compose down
 ##############################################################
 
-
-version: "3.8"
 
 services:
   # -----------------------------------------------------
   # DuckDB Service
   # -----------------------------------------------------
   duckdb:
-    image: jagh1729/duckdb:v1.2.1
+    image: duckdb/duckdb:latest
     container_name: duckdb
     volumes:
       - .:/orx-surgdatahub
-    ports:
-      - "${DUCKDB_PORT}:5825"
     stdin_open: true
     tty: true
     environment:
@@ -61,11 +54,44 @@ services:
       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
     volumes:
-      - ${DATAWAREHOUSE_PATH}:/data
+      - ${DATA_WAREHOUSE_PATH}:/data
     ports:
       - "${MINIO_API_PORT}:9090"
       - "${MINIO_CONSOLE_PORT}:9091"
     command: server /data --console-address ":9091" --address ":9090"
+    networks:
+      - minio_network
+
+  # -----------------------------------------------------
+  # Dagster Service
+  # -----------------------------------------------------
+  dagster:
+    image: dagster:latest
+    container_name: dagster
+    # Override the image's baked-in `start.sh`, which otherwise loads a
+    # stale `src.dagster_quickstart` template. Instead, install the
+    # bind-mounted DatorCloud package and launch `dagster dev` against the
+    # project's own `workspace.yaml`, which points at
+    # `examples/datorcloud_dagster_workflow.py`.
+    working_dir: /app/workspace
+    command:
+      - /bin/sh
+      - -c
+      - "pip install --quiet -e /app/workspace && dagster dev -h 0.0.0.0 -p 3030 -w /app/workspace/workspace.yaml"
+    volumes:
+      - ./:/app/workspace
+      - ${DATA_LAKE_PATH}:/app/data_lake
+      - ${RETRIEVED_DATA_PATH}:/app/retrieved_data
+    ports:
+      - "${DAGSTER_PORT:-3030}:3030"
+    environment:
+      - S3_ENDPOINT=${S3_ENDPOINT}
+      - S3_USE_SSL=${S3_USE_SSL}
+      - S3_REGION=${S3_REGION}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - DATA_LAKE_PATH=/app/data_lake
+      - RETRIEVED_DATA_PATH=/app/retrieved_data
     networks:
       - minio_network
 
@@ -78,14 +104,20 @@ services:
     depends_on:
       - duckdb
       - minio
+      - dagster
     networks:
       - minio_network
     tty: true
     stdin_open: true
-    command: ["/bin/sh", "-c", "tail -f /dev/null"]
+    # Install the bind-mounted `datorcloud` package in editable mode on
+    # startup so `python /app/examples/...` and any user script can
+    # `import datorcloud`. The `[dagster]` extra also pulls in `dagster`
+    # and `dagster-webserver`, which the bundled
+    # `examples/datorcloud_dagster_workflow.py` example imports.
+    command: ["/bin/sh", "-c", "pip install --quiet -e '/app[dagster]' && tail -f /dev/null"]
     volumes:
       - ./:/app
-      - ${DATALAKE_PATH}:/app/data
+      - ${DATA_LAKE_PATH}:/app/data_lake
       - ${RETRIEVED_DATA_PATH}:/app/retrieved_data
     environment:
       - S3_ENDPOINT=${S3_ENDPOINT}
@@ -94,6 +126,44 @@ services:
       - S3_ACCESS_KEY=${S3_ACCESS_KEY}
       - S3_SECRET_KEY=${S3_SECRET_KEY}
       - ENVIRONMENT=${ENVIRONMENT}
+      - DATA_LAKE_PATH=/app/data_lake
+      - RETRIEVED_DATA_PATH=/app/retrieved_data
+      - DAGSTER_HOST=dagster
+      - DAGSTER_PORT=3030
+
+  # -----------------------------------------------------
+  # DatorCloud CLI Service
+  # -----------------------------------------------------
+  datorcloud-cli:
+    image: jagh1729/datorcloud-cli:latest
+    container_name: datorcloud-cli
+    depends_on:
+      - duckdb
+      - minio
+      - dagster
+    networks:
+      - minio_network
+    tty: true
+    stdin_open: true
+    # Same rationale as python-runner: reinstall the bind-mounted source
+    # so the `datorcloud` console entry point reflects the host checkout.
+    command: ["/bin/sh", "-c", "pip install --quiet -e /app && tail -f /dev/null"]
+    volumes:
+      - ./:/app
+      - ${DATA_LAKE_PATH}:/app/data_lake
+      - ${RETRIEVED_DATA_PATH}:/app/retrieved_data
+    environment:
+      - S3_ENDPOINT=${S3_ENDPOINT}
+      - S3_USE_SSL=${S3_USE_SSL}
+      - S3_REGION=${S3_REGION}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - ENVIRONMENT=${ENVIRONMENT}
+      - DATA_LAKE_PATH=/app/data_lake
+      - RETRIEVED_DATA_PATH=/app/retrieved_data
+      - DAGSTER_HOST=dagster
+      - DAGSTER_PORT=3030
+
 
 # volumes:
 #   minio_data:

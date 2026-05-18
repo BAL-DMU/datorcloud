@@ -1,15 +1,41 @@
-# CoreDataPlatform
-Core data stack to store objects and query the data warehouse with MinIO and DuckDB.
+# Installation
 
+This page describes how to deploy the storage layer of the **DatorCloud
+framework** — DuckDB (Database Catalog) and MinIO (Object Store + NoSQL
+Metadata Store) — using Docker Compose. Once the storage layer is running,
+install the Python package with `pip install -e ".[dagster,test]"`
+(see [Quickstart](../04_user_guide/quickstart.md)).
 
-## Installation
-Using Docker to Set Up DuckDB and MinIO Services
+> **Credentials live in `.env`.** The DatorCloud components, CLI, examples,
+> and Dagster resource never ship hard-coded MinIO credentials. After
+> `cp .env.example .env`, edit `S3_ACCESS_KEY` and `S3_SECRET_KEY` to match
+> the values you want MinIO to use (the same values are exported as
+> `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` for the MinIO container itself).
+
+## Storage architecture
+
+All project storage lives under a single host directory defined by
+`PROJECT_ROOT` in `.env` (default `./dataspaces`):
+
+```
+${PROJECT_ROOT}/
+├── data_lake/        ← raw datasets you want to ingest    (DATA_LAKE_PATH)
+├── data_warehouse/   ← MinIO's bucket-backing storage     (DATA_WAREHOUSE_PATH)
+└── retrieved_data/   ← download target for `retrieve`     (RETRIEVED_DATA_PATH)
+```
+
+Override individual paths by exporting `DATA_LAKE_PATH`, `DATA_WAREHOUSE_PATH`,
+or `RETRIEVED_DATA_PATH` in `.env`. Copy `.env.example` to `.env` to get a
+working defaults file.
+
+## Storage stack with Docker Compose
 
 ### 1. Launch Docker Compose Services
 To start both DuckDB and MinIO, run:
 
 ```bash
-sudo docker-compose up -d --build
+cp .env.example .env
+docker compose up -d --build
 ```
 
 ### 2. Verify MinIO Service
@@ -19,12 +45,16 @@ After starting the services, confirm that MinIO is running:
 + Check MinIO logs to verify proper startup: `docker-compose logs minio`
 
 ### 3. Access MinIO Console
-+ Open a web browser and go to http://localhost:9001 to access the MinIO console.
-+ Optionally, verify MinIO setup using the mc CLI:
++ Open a web browser and go to <http://localhost:9091> to access the MinIO Console.
++ Optionally, verify MinIO setup using the `mc` CLI:
 ```bash
-mc alias set local http://localhost:9000 minioadmin minioadmin
+mc alias set local http://localhost:9090 minioadmin minioadmin
 mc admin info local
 ```
+
+> **Port note.** This stack remaps MinIO to **9090** (S3 API) and **9091**
+> (Console) so it does not collide with other local services. Forget the
+> upstream defaults of 9000/9001.
 
 ### 4. Access DuckDB Service
 + Connect to the DuckDB service using a SQL client or the DuckDB CLI:
@@ -47,15 +77,19 @@ sudo docker exec -it duckdb duckdb
     2. Install the MinIO Python client: `pip install minio`
     3. Create a script to upload data to MinIO. Save the following as `upload_to_minio.py` in a `src` directory:
         ```python
+        import os
+        from dotenv import load_dotenv
         from minio import Minio
         from minio.error import S3Error
 
-        # MinIO client configuration
+        load_dotenv()
+
+        # MinIO client configuration — credentials come from .env, never inline
         minio_client = Minio(
-            "localhost:9000",  # MinIO address
-            access_key="minioadmin",  # Access key from docker-compose
-            secret_key="minioadmin",  # Secret key from docker-compose
-            secure=False
+            os.environ.get("S3_ENDPOINT", "localhost:9090"),
+            access_key=os.environ["S3_ACCESS_KEY"],
+            secret_key=os.environ["S3_SECRET_KEY"],
+            secure=False,
         )
 
         # Define file and bucket details
@@ -86,16 +120,22 @@ DuckDB can connect to MinIO to query data using the httpfs extension, which enab
 + Step 2: Configure DuckDB for MinIO Access:
     1. Create a script to configure DuckDB and query MinIO. Save the following as `minio_duckdb_query.py` in a `src` directory:
         ```python
+        import os
         import duckdb
+        from dotenv import load_dotenv
+
+        load_dotenv()
+
         # Load DuckDB's httpfs extension for HTTP/S access
         duckdb.sql("INSTALL httpfs")
         duckdb.sql("LOAD httpfs")
 
-        # Configure DuckDB for MinIO access
+        # Configure DuckDB for MinIO access — secrets sourced from .env
+        s3_endpoint = os.environ.get("S3_ENDPOINT", "minio:9090")
         duckdb.sql("SET s3_region='us-east-1'")
-        duckdb.sql("SET s3_access_key_id='minioadmin'")
-        duckdb.sql("SET s3_secret_access_key='minioadmin'")
-        duckdb.sql("SET s3_endpoint='minio:9000'")  # Use Docker service name
+        duckdb.sql(f"SET s3_access_key_id='{os.environ['S3_ACCESS_KEY']}'")
+        duckdb.sql(f"SET s3_secret_access_key='{os.environ['S3_SECRET_KEY']}'")
+        duckdb.sql(f"SET s3_endpoint='{s3_endpoint}'")
         duckdb.sql("SET s3_url_style='path'")
         duckdb.sql("SET s3_use_ssl=false")
 
@@ -113,5 +153,6 @@ DuckDB can connect to MinIO to query data using the httpfs extension, which enab
 
 
 Notes:
-+ For local setup, use localhost:9000 as the MinIO endpoint.
-+ For inter-container communication in Docker Compose, use minio:9000 (the service name).mkdir 
++ For local setup, use `localhost:9090` as the MinIO endpoint.
++ For inter-container communication in Docker Compose, use `minio:9090` (the service name).
+

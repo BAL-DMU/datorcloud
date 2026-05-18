@@ -1,0 +1,11 @@
+/* DatorCloud — readthedocs theme overrides.
+ *
+ * Re-skin only the sidebar's logo/search header in the DatorCloud burgundy
+ * (RGB 76, 17, 48 = #4C1130). The menu list and footer keep the theme's
+ * default dark grey so the brand color appears once, not everywhere.
+ */
+
+.wy-side-nav-search,
+.wy-side-nav-search.fixed {
+    background-color: #4c1130;
+}
