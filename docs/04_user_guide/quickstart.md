@@ -27,12 +27,15 @@ pip install -e ".[dagster,test]"
 The repo ships a `docker-compose.yml` and a sample `.env`:
 
 ```bash
-cp .env.example .env       # adjust paths if needed
+cp .env.example .env       # then edit S3_ACCESS_KEY / S3_SECRET_KEY
 docker compose up -d
 ```
 
-Check the MinIO console at <http://localhost:9091> (default credentials:
-`minioadmin` / `minioadmin`).
+DatorCloud reads every credential and storage path from this `.env` — the
+components themselves no longer ship default credentials. Open the MinIO
+console at <http://localhost:9091> and log in with whatever values you put
+into `S3_ACCESS_KEY` / `S3_SECRET_KEY` (the template ships
+`minioadmin` / `minioadmin` as a development default).
 
 ## 4. Run the pipeline
 

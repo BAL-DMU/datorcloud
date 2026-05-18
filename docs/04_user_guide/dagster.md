@@ -34,16 +34,20 @@ also runs on port **3030**.)
 
 ## Wire it into your own `Definitions`
 
+`DatorCloudResource` uses Pydantic `default_factory` to read every connection
+and storage field from the project `.env` (`S3_ENDPOINT`, `S3_ACCESS_KEY`,
+`S3_SECRET_KEY`, `S3_USE_SSL`, `S3_REGION`, `DATA_LAKE_PATH`,
+`RETRIEVED_DATA_PATH`, `DUCKDB_HTTPFS_EXTENSION_PATH`). Construct the resource
+with no arguments to pick up everything from the environment, or pass keyword
+overrides for any field you want to pin in code or in `run_config`.
+
 ```python
 from dagster import Definitions, define_asset_job, AssetSelection
 from datorcloud.dagster import DatorCloudResource, component_assets
 
 resource = DatorCloudResource(
-    minio_endpoint="minio:9090",
     data_bucket="orx-datalake",
     metadata_bucket="orx-metadata",
-    local_data_dir="./dataspaces/data_lake",
-    local_download_dir="./dataspaces/retrieved_data",
 )
 
 job = define_asset_job(

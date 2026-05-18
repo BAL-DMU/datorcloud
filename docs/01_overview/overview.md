@@ -19,7 +19,7 @@ size.
 > institutional infrastructure. It provides the foundational computing
 > environment for many AI/ML research workflows at Balgrist.
 
-![DatorCloud framework — high-level architecture](orx-surgdatahub_scheme.png)
+![DatorCloud framework — high-level architecture](../03_components/datorcloud_architecture.png)
 
 ## Key features of DatorCloud
 

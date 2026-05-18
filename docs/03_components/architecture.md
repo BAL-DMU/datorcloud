@@ -22,7 +22,9 @@ collaborative research. A Dagster orchestration layer is optional.
 ## Software architecture
 
 Five components live under `datorcloud/components/`. The orchestrator
-(`datorcloud.core.DatorCloudOrchestrator`) wires them together.
+(`datorcloud.core.DatorCloudOrchestrator`) wires them together; its
+`from_env()` classmethod loads `.env` and constructs the full pipeline
+without exposing any credentials in user code.
 
 | Component                       | Responsibility                       |
 | :------------------------------ | :----------------------------------- |

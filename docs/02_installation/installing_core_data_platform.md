@@ -6,6 +6,12 @@ Metadata Store) — using Docker Compose. Once the storage layer is running,
 install the Python package with `pip install -e ".[dagster,test]"`
 (see [Quickstart](../04_user_guide/quickstart.md)).
 
+> **Credentials live in `.env`.** The DatorCloud components, CLI, examples,
+> and Dagster resource never ship hard-coded MinIO credentials. After
+> `cp .env.example .env`, edit `S3_ACCESS_KEY` and `S3_SECRET_KEY` to match
+> the values you want MinIO to use (the same values are exported as
+> `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` for the MinIO container itself).
+
 ## Storage architecture
 
 All project storage lives under a single host directory defined by
@@ -71,15 +77,19 @@ sudo docker exec -it duckdb duckdb
     2. Install the MinIO Python client: `pip install minio`
     3. Create a script to upload data to MinIO. Save the following as `upload_to_minio.py` in a `src` directory:
         ```python
+        import os
+        from dotenv import load_dotenv
         from minio import Minio
         from minio.error import S3Error
 
-        # MinIO client configuration
+        load_dotenv()
+
+        # MinIO client configuration — credentials come from .env, never inline
         minio_client = Minio(
-            "localhost:9090",  # MinIO API address (matches MINIO_API_PORT in .env)
-            access_key="minioadmin",  # Access key from .env (S3_ACCESS_KEY)
-            secret_key="minioadmin",  # Secret key from .env (S3_SECRET_KEY)
-            secure=False
+            os.environ.get("S3_ENDPOINT", "localhost:9090"),
+            access_key=os.environ["S3_ACCESS_KEY"],
+            secret_key=os.environ["S3_SECRET_KEY"],
+            secure=False,
         )
 
         # Define file and bucket details
@@ -110,16 +120,22 @@ DuckDB can connect to MinIO to query data using the httpfs extension, which enab
 + Step 2: Configure DuckDB for MinIO Access:
     1. Create a script to configure DuckDB and query MinIO. Save the following as `minio_duckdb_query.py` in a `src` directory:
         ```python
+        import os
         import duckdb
+        from dotenv import load_dotenv
+
+        load_dotenv()
+
         # Load DuckDB's httpfs extension for HTTP/S access
         duckdb.sql("INSTALL httpfs")
         duckdb.sql("LOAD httpfs")
 
-        # Configure DuckDB for MinIO access
+        # Configure DuckDB for MinIO access — secrets sourced from .env
+        s3_endpoint = os.environ.get("S3_ENDPOINT", "minio:9090")
         duckdb.sql("SET s3_region='us-east-1'")
-        duckdb.sql("SET s3_access_key_id='minioadmin'")
-        duckdb.sql("SET s3_secret_access_key='minioadmin'")
-        duckdb.sql("SET s3_endpoint='minio:9090'")  # Use Docker service name
+        duckdb.sql(f"SET s3_access_key_id='{os.environ['S3_ACCESS_KEY']}'")
+        duckdb.sql(f"SET s3_secret_access_key='{os.environ['S3_SECRET_KEY']}'")
+        duckdb.sql(f"SET s3_endpoint='{s3_endpoint}'")
         duckdb.sql("SET s3_url_style='path'")
         duckdb.sql("SET s3_use_ssl=false")
 

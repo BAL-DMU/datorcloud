@@ -127,10 +127,12 @@ with the credentials defined in `.env` (defaults: `minioadmin` / `minioadmin`).
 The CLI ships in the **`datorcloud-cli`** image (`jagh1729/datorcloud-cli:latest`).
 Inside the container the dataset lives at `/app/data_lake/4dor-dataset`:
 
+The container inherits `S3_ENDPOINT`, `S3_ACCESS_KEY`, and `S3_SECRET_KEY`
+from the project `.env`, so no credentials need to appear on the command line:
+
 ```bash
 host$ docker exec -it datorcloud-cli python -m datorcloud.cli upload \
         --dataset 4dor-dataset=/app/data_lake/4dor-dataset \
-        --minio-endpoint minio:9090 \
         -v
 ```
 
@@ -146,7 +148,9 @@ Expected output:
 
 ### Option B — Python (inside the `python-runner` container or your host)
 
-Inside the **`python-runner`** container (`jagh1729/dms-python-service:latest`):
+Inside the **`python-runner`** container (`jagh1729/dms-python-service:latest`).
+Both the container and the host load credentials from `.env`, so the snippet
+below contains no secrets:
 
 ```bash
 host$ docker exec -it python-runner bash
@@ -154,12 +158,16 @@ runner# python
 ```
 
 ```python
+import os
+from dotenv import load_dotenv
 from datorcloud import MinioObjectComponent
 
+load_dotenv()
+
 minio = MinioObjectComponent(
-    endpoint="minio:9090",          # container-internal hostname
-    access_key="minioadmin",
-    secret_key="minioadmin",
+    endpoint=os.environ.get("S3_ENDPOINT", "minio:9090"),  # container-internal default
+    access_key=os.environ["S3_ACCESS_KEY"],
+    secret_key=os.environ["S3_SECRET_KEY"],
 )
 
 minio.ensure_bucket_exists("orx-datalake")
@@ -173,7 +181,8 @@ print(f"{sum(r['status'] == 'success' for r in results)} files uploaded")
 ```
 
 If you prefer to run Python on your **host** (after `pip install -e ".[dagster,test]"`),
-use `endpoint="localhost:9090"` and `local_directory="./dataspaces/data_lake/4dor-dataset"`.
+set `S3_ENDPOINT=localhost:9090` in `.env` and use
+`local_directory="./dataspaces/data_lake/4dor-dataset"`.
 
 ### Verify the upload in MinIO
 
@@ -200,7 +209,6 @@ host$ docker exec -it datorcloud-cli python -m datorcloud.cli metadata \
         --dataset 4dor-dataset=/app/data_lake/4dor-dataset \
         --output-file /app/data_lake/metadata_4dor.csv \
         --object-name metadata_4dor.csv \
-        --minio-endpoint minio:9090 \
         -v
 ```
 
@@ -258,8 +266,7 @@ host$ docker exec -it datorcloud-cli python -m datorcloud.cli query \
         --metadata-file s3://orx-metadata/metadata_4dor.csv \
         --filter camera_id=camera01 \
         --filter image_type=colorimage \
-        --limit 10 \
-        --s3-endpoint minio:9090
+        --limit 10
 ```
 
 The CLI prints the result as CSV to stdout. Pipe it to a file with `>` if you
@@ -268,12 +275,16 @@ want to save it.
 ### Option B — Python (inside `python-runner`)
 
 ```python
+import os
+from dotenv import load_dotenv
 from datorcloud import QueryComponent
 
+load_dotenv()
+
 query = QueryComponent(
-    s3_endpoint="minio:9090",
-    s3_access_key="minioadmin",
-    s3_secret_key="minioadmin",
+    s3_endpoint=os.environ.get("S3_ENDPOINT", "minio:9090"),
+    s3_access_key=os.environ["S3_ACCESS_KEY"],
+    s3_secret_key=os.environ["S3_SECRET_KEY"],
 )
 
 df = query.query_metadata(
@@ -309,8 +320,7 @@ host$ docker exec -it datorcloud-cli python -m datorcloud.cli retrieve \
         --filter        camera_id=camera01 \
         --filter        image_type=colorimage \
         --max-files     5 \
-        --minio-endpoint minio:9090 \
-        --local-dir     /app/retrieved_data \
+        --local-download-dir /app/retrieved_data \
         -v
 ```
 
@@ -358,14 +368,13 @@ for f in downloaded:
 ## Step 6 — One-call alternative (orchestrator)
 
 If you do not want to assemble the components yourself, the orchestrator
-exposes the same four stages from a single class. Run it inside
-`python-runner`:
+exposes the same four stages from a single class. `from_env()` loads `.env`
+and wires every component for you. Run it inside `python-runner`:
 
 ```python
 from datorcloud.core import DatorCloudOrchestrator
 
-orch = DatorCloudOrchestrator(
-    minio_endpoint="minio:9090",
+orch = DatorCloudOrchestrator.from_env(
     data_bucket="orx-datalake",
     metadata_bucket="orx-metadata",
 )
@@ -402,12 +411,12 @@ The compose stack already runs a Dagster webserver on **port 3030**. Open
 **Launchpad**, and paste:
 
 ```yaml
+# Resource fields (endpoint, credentials, paths) default to the corresponding
+# environment variables, which are loaded from the project .env. Only override
+# what you want to change.
 resources:
   datorcloud:
     config:
-      minio_endpoint: minio:9090
-      access_key: minioadmin
-      secret_key: minioadmin
       data_bucket: orx-datalake
       metadata_bucket: orx-metadata
 ops:
