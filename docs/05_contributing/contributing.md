@@ -12,11 +12,11 @@ datorcloud/                  # The framework's Python package
   dagster/                     ConfigurableResource + @asset definitions
   cli.py                       datorcloud command entry point
 tests/                       pytest suite with FakeMinioClient + fixtures
-examples/                    Runnable scripts (basic_usage, dagster_workflow, ...)
+examples/                    Runnable scripts (basic_usage, datorcloud_dagster_workflow, ...)
 docs/                        MkDocs site for the DatorCloud framework
 build/                       Dockerfiles for MinIO, DuckDB, Dagster, datorcloud-cli
 dataspaces/                  Project storage skeleton (data_lake, data_warehouse, retrieved_data)
-workspace.yaml               Dagster workspace pointing at examples/dagster_workflow.py
+workspace.yaml               Dagster workspace pointing at examples/datorcloud_dagster_workflow.py
 pyproject.toml               Authoritative project metadata
 ```
 

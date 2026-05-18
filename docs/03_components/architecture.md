@@ -67,7 +67,7 @@ four chained assets:
 upload_datasets → generate_metadata → query_metadata → retrieve_objects
 ```
 
-The repository-level `workspace.yaml` loads `examples/dagster_workflow.py`,
+The repository-level `workspace.yaml` loads `examples/datorcloud_dagster_workflow.py`,
 so `dagster dev` is enough to materialize the full pipeline.
 
 ## Key technologies
