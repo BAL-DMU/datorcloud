@@ -5,6 +5,11 @@ dataspaces/**
 !dataspaces/retrieved_data/
 !dataspaces/**/.gitkeep
 
+## ...but DO track the bundled 4dor-dataset sample so that the tutorials,
+## examples and Dagster jobs work out of the box on a fresh clone.
+!dataspaces/data_lake/4dor-dataset/
+!dataspaces/data_lake/4dor-dataset/**
+
 ## Python build / test artifacts
 __pycache__/
 *.py[cod]
