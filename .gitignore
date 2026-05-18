@@ -26,6 +26,10 @@ _site_check/
 *.db
 *.ddb
 
+## Dagster ephemeral home dirs (created by execute_in_process / dagster dev)
+.tmp_dagster_home_*/
+dagster_home/
+
 ## Docker image tarballs
 build/**/*.tar
 docker/*
