@@ -205,4 +205,4 @@ You should see `30 passed`. The Dagster materialization test auto-skips when
 
 ## License
 
-MIT
+BSD 3-Clause — see [LICENSE](LICENSE).
