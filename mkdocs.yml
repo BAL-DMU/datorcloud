@@ -9,6 +9,7 @@ nav:
   - User Guide:
       - Quickstart: 04_user_guide/quickstart.md
       - Tutorial — 4dor-dataset: 04_user_guide/tutorial_4dor.md
+      - Tutorial — Dagster Workflows: 04_user_guide/tutorial_dagster.md
       - Python API: 04_user_guide/python_api.md
       - CLI: 04_user_guide/cli.md
       - Dagster Integration: 04_user_guide/dagster.md

@@ -4,6 +4,11 @@ The **DatorCloud framework** ships ready-to-use Dagster assets so the same
 pipeline you call from Python or the CLI can also run as a graph in the
 Dagster UI.
 
+> **Looking for a step-by-step walkthrough?** See
+> [Tutorial — Dagster Workflows](tutorial_dagster.md), which materialises
+> Workflow A (Ingestion) and Workflow B (Query & Fetch) as two separate
+> jobs in the Dagster UI.
+
 ## What you get
 
 `datorcloud.dagster` exposes:
@@ -20,7 +25,7 @@ Dagster UI.
 ## Run the bundled workflow
 
 The repository root contains a `workspace.yaml` pointing at
-`examples/dagster_workflow.py`, which already wires the resource, the assets,
+`examples/datorcloud_dagster_workflow.py`, which already wires the resource, the assets,
 and a `datorcloud_workflow_job`:
 
 ```bash
