@@ -99,7 +99,10 @@ services:
       - minio_network
     tty: true
     stdin_open: true
-    command: ["/bin/sh", "-c", "tail -f /dev/null"]
+    # Install the bind-mounted `datorcloud` package in editable mode on
+    # startup so `python /app/examples/...` and any user script can
+    # `import datorcloud` regardless of which image tag was pulled.
+    command: ["/bin/sh", "-c", "pip install --quiet -e /app && tail -f /dev/null"]
     volumes:
       - ./:/app
       - ${DATA_LAKE_PATH}:/app/data_lake
@@ -130,7 +133,9 @@ services:
       - minio_network
     tty: true
     stdin_open: true
-    command: ["/bin/sh", "-c", "tail -f /dev/null"]
+    # Same rationale as python-runner: reinstall the bind-mounted source
+    # so the `datorcloud` console entry point reflects the host checkout.
+    command: ["/bin/sh", "-c", "pip install --quiet -e /app && tail -f /dev/null"]
     volumes:
       - ./:/app
       - ${DATA_LAKE_PATH}:/app/data_lake
