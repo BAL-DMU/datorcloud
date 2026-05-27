@@ -65,20 +65,26 @@ def _parse_filters(values: Optional[Sequence[str]]) -> Dict[str, Any]:
     return out
 
 
-def _build_orchestrator(args: argparse.Namespace) -> DatorCloudOrchestrator:
+def _build_orchestrator(
+    args: argparse.Namespace, *, require_minio: bool = True
+) -> DatorCloudOrchestrator:
     """Construct the orchestrator from CLI args.
 
     CLI defaults pull from the environment (which has been populated by
     ``load_dotenv()`` above) without hard-coding any credentials. Missing
     credentials surface as a clear ``ValueError`` from the underlying
     components.
+
+    The catalog-only verbs (``query --sql``, ``snapshot``, etc.) pass
+    ``require_minio=False`` so callers can drive the L1-L4 catalog
+    against a local DuckDB / Parquet root without configuring MinIO.
     """
-    if not args.minio_access_key or not args.minio_secret_key:
+    if require_minio and (not args.minio_access_key or not args.minio_secret_key):
         raise SystemExit(
             "MinIO credentials are missing. Set S3_ACCESS_KEY and S3_SECRET_KEY "
             "in your .env file, or pass --minio-access-key / --minio-secret-key."
         )
-    return DatorCloudOrchestrator(
+    kwargs: Dict[str, Any] = dict(
         minio_endpoint=args.minio_endpoint,
         minio_access_key=args.minio_access_key,
         minio_secret_key=args.minio_secret_key,
@@ -87,7 +93,17 @@ def _build_orchestrator(args: argparse.Namespace) -> DatorCloudOrchestrator:
         metadata_bucket=args.metadata_bucket,
         local_download_dir=args.local_download_dir,
         duckdb_extension_path=args.duckdb_extension_path,
+        catalog_base_uri=getattr(args, "catalog_base_uri", None)
+        or os.environ.get("DATORCLOUD_CATALOG_URI"),
     )
+    if not require_minio and (
+        not args.minio_access_key or not args.minio_secret_key
+    ):
+        # Catalog-only mode: stub out credentials so the minio component
+        # is constructed but never used.
+        kwargs["minio_access_key"] = args.minio_access_key or "_catalog_only_"
+        kwargs["minio_secret_key"] = args.minio_secret_key or "_catalog_only_"
+    return DatorCloudOrchestrator(**kwargs)
 
 
 def _add_common_args(parser: argparse.ArgumentParser) -> None:
@@ -124,6 +140,16 @@ def _add_common_args(parser: argparse.ArgumentParser) -> None:
         default=os.environ.get("DUCKDB_HTTPFS_EXTENSION_PATH"),
     )
     parser.add_argument(
+        "--catalog-base-uri",
+        dest="catalog_base_uri",
+        default=os.environ.get("DATORCLOUD_CATALOG_URI"),
+        help=(
+            "Root URI for the L1-L4 Parquet catalog "
+            "(file:// or s3:// or bare path). "
+            "Defaults to $DATORCLOUD_CATALOG_URI."
+        ),
+    )
+    parser.add_argument(
         "-v", "--verbose", action="count", default=0, help="Increase log verbosity."
     )
 
@@ -158,6 +184,14 @@ def _cmd_metadata(args: argparse.Namespace) -> int:
 
 
 def _cmd_query(args: argparse.Namespace) -> int:
+    # New Phase-1 path: --sql goes directly through the formal (Q)
+    # operator on the L1-L4 catalog. The legacy --metadata-file path
+    # routes to the original CSV-backed query_metadata for back-compat.
+    if args.sql is not None:
+        orchestrator = _build_orchestrator(args, require_minio=False)
+        df = orchestrator.query(sql=args.sql)
+        print(df.to_csv(index=False))
+        return 0
     orchestrator = _build_orchestrator(args)
     filters = _parse_filters(args.filter)
     df = orchestrator.query_metadata(
@@ -220,7 +254,21 @@ def build_parser() -> argparse.ArgumentParser:
     _add_common_args(p_meta)
     p_meta.set_defaults(func=_cmd_metadata)
 
-    p_query = sub.add_parser("query", help="Run a filtered query against the metadata CSV.")
+    p_query = sub.add_parser(
+        "query",
+        help=(
+            "Query the catalog. Use --sql for the Phase-1 L1-L4 path or "
+            "--metadata-file for the legacy CSV path."
+        ),
+    )
+    p_query.add_argument(
+        "--sql",
+        default=None,
+        help=(
+            "Raw DuckDB SQL evaluated against the Phase-1 L1-L4 catalog "
+            "views (v_doris, v_doris_egress)."
+        ),
+    )
     p_query.add_argument("--metadata-file", default=None)
     p_query.add_argument("--filter", action="append", default=[])
     p_query.add_argument("--limit", type=int, default=None)

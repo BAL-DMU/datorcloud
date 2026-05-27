@@ -5,11 +5,20 @@ from .components import (
     MetadataStorageComponent,
     MinioObjectComponent,
     ObjectRetrievalComponent,
+    ParquetCatalogComponent,
     QueryComponent,
 )
 from .core import DatorCloudOrchestrator
+from .schemas import SCHEMA_VERSION as L1_L4_SCHEMA_VERSION
+from .snapshots import (
+    EvalSet,
+    Snapshot,
+    create_eval_set,
+    load_snapshot_payload,
+    snapshot_cohort,
+)
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     "DatorCloudOrchestrator",
@@ -17,6 +26,13 @@ __all__ = [
     "MetadataStorageComponent",
     "MinioObjectComponent",
     "ObjectRetrievalComponent",
+    "ParquetCatalogComponent",
     "QueryComponent",
+    "Snapshot",
+    "EvalSet",
+    "snapshot_cohort",
+    "create_eval_set",
+    "load_snapshot_payload",
+    "L1_L4_SCHEMA_VERSION",
     "__version__",
 ]

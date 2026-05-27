@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "datorcloud"
-version = "0.1.0"
+version = "0.2.0"
 description = "Modular, component-oriented framework for managing multimodal research data with MinIO and DuckDB."
 readme = "README.md"
 license = { text = "BSD-3-Clause" }
@@ -31,6 +31,7 @@ dependencies = [
     "minio>=7.1.15",
     "duckdb>=1.2.0",
     "pandas>=1.5.3",
+    "pyarrow>=14.0",
     "python-dotenv>=1.0.0",
 ]
 
@@ -66,12 +67,18 @@ Author = "https://github.com/jagh"
 include = ["datorcloud*"]
 exclude = ["tests*", "examples*", "build*", "docs*", "src*"]
 
+[tool.setuptools.package-data]
+"datorcloud.schemas" = ["*.sql"]
+
 [tool.pytest.ini_options]
 minversion = "7.0"
 testpaths = ["tests"]
 addopts = "-ra"
 filterwarnings = [
     "ignore::DeprecationWarning",
+]
+markers = [
+    "integration: end-to-end DORIS integration tests (doris-it-XX)",
 ]
 
 [tool.ruff]
