@@ -1,11 +1,19 @@
 """DatorCloud - A framework for managing and retrieving multimodal research data."""
 
 from .components import (
+    CitationCompletenessError,
+    HFPublisherComponent,
+    HubBackend,
+    HuggingFaceHub,
+    LicensePolicyError,
+    LocalFilesystemHub,
     MetadataGeneratorComponent,
     MetadataStorageComponent,
     MinioObjectComponent,
     ObjectRetrievalComponent,
     ParquetCatalogComponent,
+    PublishPolicy,
+    PublishResult,
     QueryComponent,
 )
 from .core import DatorCloudOrchestrator
@@ -18,7 +26,7 @@ from .snapshots import (
     snapshot_cohort,
 )
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 __all__ = [
     "DatorCloudOrchestrator",
@@ -28,6 +36,14 @@ __all__ = [
     "ObjectRetrievalComponent",
     "ParquetCatalogComponent",
     "QueryComponent",
+    "HFPublisherComponent",
+    "HubBackend",
+    "LocalFilesystemHub",
+    "HuggingFaceHub",
+    "PublishPolicy",
+    "PublishResult",
+    "LicensePolicyError",
+    "CitationCompletenessError",
     "Snapshot",
     "EvalSet",
     "snapshot_cohort",

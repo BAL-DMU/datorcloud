@@ -22,6 +22,14 @@ from typing import Any, Dict, List, Optional, Sequence
 
 import pandas as pd
 
+from ..components.hf_publisher_component import (
+    DEFAULT_ALLOWED_LICENSES,
+    HFPublisherComponent,
+    HubBackend,
+    LocalFilesystemHub,
+    PublishPolicy,
+    PublishResult,
+)
 from ..components.metadata_generator_component import MetadataGeneratorComponent
 from ..components.metadata_storage_component import MetadataStorageComponent
 from ..components.minio_component import MinioObjectComponent
@@ -534,3 +542,99 @@ class DatorCloudOrchestrator:
         if slash < 0:
             return None
         return rest[slash + 1:]
+
+    # ------------------------------------------------------------------
+    # Phase 3 -- Hugging Face delivery
+    #
+    # Per STEP_BY_STEP_PLAN.md §5 (steps 3.1-3.6) DatorCloud is the
+    # uploader. ``publish_to_hub`` is the canonical egress entry point;
+    # it consumes an L4 snapshot and a target hub-id and writes objects
+    # + L1-L4 Parquet sidecars + dataset card through the pluggable
+    # ``HubBackend`` abstraction.
+    # ------------------------------------------------------------------
+
+    def publish_to_hub(
+        self,
+        *,
+        snapshot_id: str,
+        hub_id: str,
+        allowed_licenses: Sequence[str] = DEFAULT_ALLOWED_LICENSES,
+        require_redistribution_ok: bool = True,
+        require_share_alike: Optional[bool] = False,
+        allowed_privacy: Sequence[str] = ("public",),
+        metadata_only: bool = False,
+        include_blobs: bool = False,
+        dry_run: bool = True,
+        backend: Optional[HubBackend] = None,
+        local_hub_root: Optional[str] = None,
+    ) -> PublishResult:
+        """Publish *snapshot_id*'s public slice to *hub_id*.
+
+        Args:
+            snapshot_id:               L4 snapshot to publish.
+            hub_id:                    Target HF dataset repo (``org/name``).
+            allowed_licenses:          SPDX allow-list; rows outside it
+                                       cause the license gate to refuse.
+            require_redistribution_ok: When True, every row must carry
+                                       ``redistribution_ok=True``.
+            require_share_alike:       Tri-state. ``True`` -> SA repo
+                                       (every row must be SA). ``False``
+                                       (the default) -> CC-BY umbrella
+                                       (no SA contamination allowed).
+                                       ``None`` -> mixing is permitted
+                                       (only the VISCERAL metadata-only
+                                       card uses this).
+            allowed_privacy:           Privacy classes the publisher
+                                       will honour.
+            metadata_only:             When True, only L1 + dataset card
+                                       reach the Hub.
+            include_blobs:             When True, raw/converted/mask
+                                       URIs are streamed through
+                                       :class:`MinioObjectComponent`.
+            dry_run:                   When True (the default), the
+                                       license gate is enforced and
+                                       artefacts are built in memory
+                                       but never written.
+            backend:                   Explicit :class:`HubBackend`. The
+                                       Phase 3 integration tests pass a
+                                       :class:`LocalFilesystemHub` here
+                                       to stay offline.
+            local_hub_root:            Convenience -- when ``backend`` is
+                                       None, build a
+                                       :class:`LocalFilesystemHub` at
+                                       this root. Used by tests that
+                                       only need the local mock.
+
+        Returns:
+            A :class:`PublishResult` summarising the artefacts the
+            publisher produced. On a successful (non-dry-run) push, the
+            snapshot's ``l4_cohort_snapshot.hf_publication_log`` is
+            updated with the result.
+
+        Raises:
+            LicensePolicyError: when any row fails the publish-time
+                license gate (per design invariant I5).
+            CitationCompletenessError: when a DOI in ``l1_citations``
+                fails to appear in the rendered README.
+        """
+        if backend is None:
+            backend = LocalFilesystemHub(local_hub_root or "./.hf_mock_hub")
+        publisher = HFPublisherComponent(
+            self._require_catalog(),
+            minio_component=self.minio_component,
+        )
+        policy = PublishPolicy(
+            hub_id=hub_id,
+            allowed_licenses=tuple(allowed_licenses),
+            require_redistribution_ok=require_redistribution_ok,
+            require_share_alike=require_share_alike,
+            allowed_privacy=tuple(allowed_privacy),
+            metadata_only=metadata_only,
+            include_blobs=include_blobs,
+        )
+        return publisher.publish_snapshot(
+            snapshot_id=snapshot_id,
+            policy=policy,
+            backend=backend,
+            dry_run=dry_run,
+        )

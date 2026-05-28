@@ -1,3 +1,13 @@
+from .hf_publisher_component import (
+    CitationCompletenessError,
+    HFPublisherComponent,
+    HubBackend,
+    HuggingFaceHub,
+    LicensePolicyError,
+    LocalFilesystemHub,
+    PublishPolicy,
+    PublishResult,
+)
 from .minio_component import MinioObjectComponent
 from .metadata_generator_component import MetadataGeneratorComponent
 from .metadata_storage_component import MetadataStorageComponent
@@ -12,4 +22,12 @@ __all__ = [
     "ParquetCatalogComponent",
     "QueryComponent",
     "ObjectRetrievalComponent",
+    "HFPublisherComponent",
+    "HubBackend",
+    "LocalFilesystemHub",
+    "HuggingFaceHub",
+    "PublishPolicy",
+    "PublishResult",
+    "LicensePolicyError",
+    "CitationCompletenessError",
 ]

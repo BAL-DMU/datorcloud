@@ -4,6 +4,79 @@ All notable changes to **datorcloud** are documented in this file. The
 format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and the version numbers follow [Semantic Versioning](https://semver.org).
 
+## [0.3.0] - 2026-05-28
+
+Phase 3 of the DORIS integration plan landed: DatorCloud is now the
+**uploader** for Hugging Face. A new `HFPublisherComponent` lifts an L4
+snapshot from MinIO + the layered Parquet catalog onto a HF dataset
+repo, alongside L1-L4 Parquet sidecars. The Hub becomes the queryable
+public face of the same catalog the TRE keeps as the master.
+
+### Added
+
+- **`HFPublisherComponent`** (`datorcloud/components/hf_publisher_component.py`)
+  -- the canonical egress component for Phase 3. Streams a snapshot's
+  CC-BY-eligible records to a HF dataset repo and co-publishes L1-L4
+  Parquet sidecars under `catalog/`. Per-subject manifests +
+  (optionally) raw / converted / mask blobs land under
+  `data/<dataset_id>/<subject_id>/`. The component is intentionally
+  *additive*: it never mutates the source catalog beyond appending one
+  entry to `l4_cohort_snapshot.hf_publication_log` after a successful
+  push.
+- **`HubBackend` abstraction** + two implementations:
+  `LocalFilesystemHub` (offline-friendly, deterministic revision SHA
+  -- used by the Phase 3 integration tests) and `HuggingFaceHub` (real
+  `huggingface_hub`-backed push, selected by `doris publish
+  --dry-run=false`).
+- **Publish-time license gate** (per design invariant I5, defence in
+  depth on top of the Phase 2 ingest gate). Raises
+  `LicensePolicyError` *before* any byte is written when: an L1 row's
+  `license_spdx` is outside `allowed_licenses`; a row carries
+  `redistribution_ok=False`; a row carries
+  `share_alike_obligation=True` for a non-SA repo (SA contamination);
+  a row carries `share_alike_obligation=False` for the SA repo; or a
+  row's `privacy_class` is outside `allowed_privacy` (default
+  `('public',)` refuses DUA / restricted). Raises
+  `CitationCompletenessError` when a DOI in `l1_citations` is missing
+  from the rendered README.
+- **`PublishPolicy` / `PublishResult`** dataclasses + new
+  `DatorCloudOrchestrator.publish_to_hub(snapshot_id, hub_id, ...,
+  dry_run=True)` entry point.
+- **Dataset card template** (`datorcloud/templates/dataset_card.md.template`)
+  and a layout doc (`datorcloud/templates/catalog_layout.md`) that
+  external contributors mirror.
+- **`hf_publication_log` write-back**: after a successful non-dry-run
+  push, the result (hub_id, revision_sha, timestamp, n_files,
+  catalog_sha256) is appended to `l4_cohort_snapshot.hf_publication_log`
+  as a JSON array.
+- **Documentation**: `docs/hf_layout.md` describes the MIRO-on-HF
+  convention, the publish-time license gate, the `HubBackend`
+  abstraction, and the I6 cross-tier identity invariant.
+- **Integration test** `tests/test_hf_publisher.py` covering the
+  publish round-trip via `LocalFilesystemHub`.
+
+### Changed
+
+- `pyproject.toml`: version bumped to `0.3.0`; package-data now ships
+  `datorcloud.templates/*.template` + `*.md` so the dataset card lands
+  in the wheel.
+- `DatorCloudOrchestrator`: new `publish_to_hub` method. Existing
+  `(I, C, Q, F)` operators unchanged; the new path is opt-in via the
+  Phase 1 `catalog_base_uri=` argument.
+- `datorcloud.__init__` now re-exports the publisher surface
+  (`HFPublisherComponent`, `HubBackend`, `LocalFilesystemHub`,
+  `HuggingFaceHub`, `PublishPolicy`, `PublishResult`,
+  `LicensePolicyError`, `CitationCompletenessError`).
+
+### Migration notes (downstream)
+
+- Downstream pins to `datorcloud>=0.3.0`. The
+  `msk-ai-trust-to-deploy` repo bumped its requirement in
+  `pyproject.toml` and added a `doris publish` CLI verb that wraps
+  this new entry point.
+- The L1-L4 DDL is unchanged. `l4_cohort_snapshot.hf_publication_log`
+  was reserved in 0.2.0 and is now populated by the publisher.
+
 ## [0.2.0] - 2026-05-27
 
 Phase 1 of the DORIS integration plan landed: the layered L1-L4 catalog,

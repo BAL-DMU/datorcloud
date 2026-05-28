@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "datorcloud"
-version = "0.2.0"
+version = "0.3.0"
 description = "Modular, component-oriented framework for managing multimodal research data with MinIO and DuckDB."
 readme = "README.md"
 license = { text = "BSD-3-Clause" }
@@ -69,6 +69,7 @@ exclude = ["tests*", "examples*", "build*", "docs*", "src*"]
 
 [tool.setuptools.package-data]
 "datorcloud.schemas" = ["*.sql"]
+"datorcloud.templates" = ["*.template", "*.md"]
 
 [tool.pytest.ini_options]
 minversion = "7.0"

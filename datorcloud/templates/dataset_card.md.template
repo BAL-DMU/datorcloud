@@ -1,0 +1,59 @@
+---
+license: {license_spdx}
+tags:
+- medical-imaging
+- segmentation
+- musculoskeletal
+- DORIS
+configs:
+{configs_yaml}
+---
+
+# {hub_id}
+
+DORIS-published Hugging Face dataset. The catalog metadata (L1-L4) is
+shipped as Parquet sidecars under `catalog/` so this repo is queryable
+end-to-end via DuckDB httpfs without downloading any pixel data.
+
+## Snapshot
+
+- `snapshot_id`: `{snapshot_id}`
+- `catalog_sha256`: `{catalog_sha256}`
+- `n_records`: {n_records}
+- `schema_version`: `{schema_version}`
+- `licenses`: {licenses}
+- `modalities`: {modalities}
+- `metadata_only`: {metadata_only}
+- `share_alike_isolated`: {share_alike_isolated}
+
+## Configurations
+
+{per_config_lines}
+
+## Catalog layout
+
+```
+catalog/
+  l1.parquet
+{catalog_extra_lines}
+data/<dataset_id>/<subject_id>/manifest.json
+{data_extra_lines}
+```
+
+## Eval sets
+
+{eval_lines}
+
+## Citations
+
+{citation_lines}
+
+## Reproduction
+
+```python
+import duckdb
+duckdb.sql("SELECT count(*) FROM read_parquet('https://huggingface.co/datasets/{hub_id}/resolve/main/catalog/l1.parquet')")
+```
+
+Published by DORIS / DatorCloud per the integration plan
+(`99_integration_plan/STEP_BY_STEP_PLAN.md` §5 Phase 3).
