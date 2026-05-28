@@ -944,9 +944,10 @@ class HFPublisherComponent:
             else []
         )
 
+        hf_license = _spdx_to_hf_license(licenses[0]) if licenses else "other"
         frontmatter_lines = [
             "---",
-            f"license: {licenses[0] if licenses else 'other'}",
+            f"license: {hf_license}",
             "tags:",
             "- medical-imaging",
             "- segmentation",
@@ -1144,6 +1145,38 @@ def _doi_url(doi: str) -> str:
     if doi.startswith("http://") or doi.startswith("https://"):
         return doi
     return f"https://doi.org/{doi}"
+
+
+# Hugging Face's dataset-card validator only accepts the lowercased
+# dashed identifiers (``cc-by-4.0``) -- not the SPDX form (``CC-BY-4.0``)
+# we use internally. ``LicenseRef-*`` SPDX values map to ``other`` since
+# HF has no dedicated tag for DUA / unknown licenses.
+_SPDX_TO_HF_LICENSE: Dict[str, str] = {
+    "CC-BY-4.0":     "cc-by-4.0",
+    "CC-BY-3.0":     "cc-by-3.0",
+    "CC-BY-2.0":     "cc-by-2.0",
+    "CC-BY-SA-4.0":  "cc-by-sa-4.0",
+    "CC-BY-SA-3.0":  "cc-by-sa-3.0",
+    "CC-BY-NC-4.0":  "cc-by-nc-4.0",
+    "CC-BY-NC-SA-4.0": "cc-by-nc-sa-4.0",
+    "CC-BY-ND-4.0":  "cc-by-nd-4.0",
+    "CC0-1.0":       "cc0-1.0",
+    "Apache-2.0":    "apache-2.0",
+    "MIT":           "mit",
+    "BSD-2-Clause":  "bsd-2-clause",
+    "BSD-3-Clause":  "bsd-3-clause",
+}
+
+
+def _spdx_to_hf_license(spdx: str) -> str:
+    """Map an SPDX identifier to a Hugging Face dataset-card license tag."""
+    if not spdx:
+        return "other"
+    if spdx in _SPDX_TO_HF_LICENSE:
+        return _SPDX_TO_HF_LICENSE[spdx]
+    if spdx.startswith("LicenseRef-"):
+        return "other"
+    return spdx.lower()
 
 
 def read_publication_log(catalog, snapshot_id: str) -> List[Dict[str, Any]]:

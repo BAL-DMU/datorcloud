@@ -4,6 +4,24 @@ All notable changes to **datorcloud** are documented in this file. The
 format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and the version numbers follow [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+Phase 4 of the DORIS integration plan ships entirely inside
+`msk-ai-trust-to-deploy` (the DORIS consumer): a read-only HF client
+(`DorisHFClient`), the cross-tier `build_cohort(source='hf')` path,
+the predicate library, and the `doris cohort fetch` CLI verb. No
+DatorCloud changes are required — Phase 3's `HFPublisherComponent`
+already emits the catalog layout (`<hub>/catalog/{l1,l2,l3,l4_*,
+v_doris}.parquet`) the new client reads. The
+`LocalFilesystemHub` / `LocalFilesystemReadBackend` pair is the shared
+contract between the publisher (write side) and the new client (read
+side); the Phase 4 integration test in T2D rounds-trips publish → read
+in one process to assert it.
+
+See `99_integration_plan/STEP_BY_STEP_PLAN.md` §6 for the full Phase 4
+deliverables and `../msk-ai-trust-to-deploy/CHANGELOG.md` for the
+client-side release notes.
+
 ## [0.3.0] - 2026-05-28
 
 Phase 3 of the DORIS integration plan landed: DatorCloud is now the
