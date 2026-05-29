@@ -6,6 +6,12 @@ and the version numbers follow [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+### Added
+- **`doris_model_weights_sensor`** (`datorcloud/dagster/evaluation_sensor.py`) —
+  Dagster sensor that enqueues a Phase-5 `run_evaluation` job whenever
+  weights under `s3://doris-models/<family>/` change. Exposes
+  `build_eval_run_requests()` and `weights_changed()` for unit tests.
+
 Phase 4 of the DORIS integration plan ships entirely inside
 `msk-ai-trust-to-deploy` (the DORIS consumer): a read-only HF client
 (`DorisHFClient`), the cross-tier `build_cohort(source='hf')` path,

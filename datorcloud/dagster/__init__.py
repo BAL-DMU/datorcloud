@@ -13,6 +13,11 @@ from .component_assets import (
     retrieve_objects,
     upload_datasets,
 )
+from .evaluation_sensor import (
+    build_eval_run_requests,
+    doris_model_weights_sensor,
+    weights_changed,
+)
 
 __all__ = [
     "DatorCloudComponents",
@@ -26,4 +31,7 @@ __all__ = [
     "query_metadata",
     "retrieve_objects",
     "upload_datasets",
+    "build_eval_run_requests",
+    "doris_model_weights_sensor",
+    "weights_changed",
 ]
