@@ -7,6 +7,22 @@ and the version numbers follow [Semantic Versioning](https://semver.org).
 ## [Unreleased]
 
 ### Added
+- **`doris_catalog_publish_sensor`** (`datorcloud/dagster/catalog_publish_sensor.py`) —
+  Cross-cutting workstream sensor that re-pushes `<hub>/catalog/<layer>.parquet`
+  sidecars whenever any L1-L4 layer mutates. The pure-Python core
+  (`build_republish_run_requests`, `digest_catalog`, `changed_layers`)
+  is unit-tested without `dagster` installed; the `@sensor`-decorated
+  entry point degrades to `None` when the optional `dagster` import
+  fails. State persists under `$DORIS_SENSOR_STATE` (default
+  `/tmp/doris_sensor_state`). New test
+  `tests/test_catalog_publish_sensor.py` covers per-layer digest
+  stability, mutation detection, and the run-key shape
+  (`catalog_republish:<alias>:<sha>`).
+- **`.github/CODEOWNERS`** — routes any change under
+  `datorcloud/schemas/`, `datorcloud/components/hf_publisher_component.py`,
+  `datorcloud/dagster/`, and the user-facing docs to the
+  `@bal-dmu/datorcloud-stewards` + `@bal-dmu/doris-maintainers`
+  teams (two-eyes review).
 - **`doris_model_weights_sensor`** (`datorcloud/dagster/evaluation_sensor.py`) —
   Dagster sensor that enqueues a Phase-5 `run_evaluation` job whenever
   weights under `s3://doris-models/<family>/` change. Exposes

@@ -1,0 +1,18 @@
+# DatorCloud CODEOWNERS.
+#
+# DORIS cross-cutting workstreams that anchor in DatorCloud
+# (see msk-ai-trust-to-deploy/99_integration_plan/STEP_BY_STEP_PLAN.md §8).
+
+# ---- Catalog DDL (any schema bump implies a version bump) -----------
+/datorcloud/schemas/                      @bal-dmu/datorcloud-stewards @bal-dmu/doris-maintainers
+
+# ---- HF publisher / publish-time license gate -----------------------
+/datorcloud/components/hf_publisher_component.py   @bal-dmu/datorcloud-stewards @bal-dmu/doris-maintainers
+
+# ---- Dagster sensors (model weights + HF catalog republish) ---------
+/datorcloud/dagster/                      @bal-dmu/doris-maintainers @bal-dmu/datorcloud-stewards
+
+# ---- Documentation --------------------------------------------------
+/docs/hf_layout.md                        @bal-dmu/doris-maintainers @bal-dmu/datorcloud-stewards
+/docs/snapshots.md                        @bal-dmu/datorcloud-stewards
+/CHANGELOG.md                             @bal-dmu/datorcloud-stewards
